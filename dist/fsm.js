@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", {
 
 exports["default"] = function (states, defaultState) {
   var fsm = {};
+
   return fsm;
 };
 
