@@ -1,2 +1,7 @@
 node_modules/
 .DS_Store
+.projectile
+.tern-port
+TAGS
+npm-debug.log
+
