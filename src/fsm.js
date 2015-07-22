@@ -1,5 +1,7 @@
-export default (states, startState) => {
+export default function(states, startState) {
+
   const fsm = {
+
     states,
 
     currentState: startState,
@@ -14,7 +16,6 @@ export default (states, startState) => {
       }
     },
   }
-
 
   return fsm
 }
