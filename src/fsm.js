@@ -1,21 +1,28 @@
-export default function(states, startState) {
+import {guard} from "./lib.js";
+
+export default function(stateGraph, initialState) {
+
+  guard(stateGraph, initialState);
+
+  let currentState = initialState;
 
   const fsm = {
 
-    states,
-
-    currentState: startState,
-
     canTransition(targetState) {
-      states[currentState].to === targetState
+      return stateGraph[currentState] === targetState;
     },
 
     transition(targetState) {
       if (fsm.canTransition(targetState)) {
-        currentState = targetState
+        currentState = targetState;
       }
     },
-  }
 
-  return fsm
+    getState() {
+      return currentState;
+    }
+
+  };
+
+  return fsm;
 }
