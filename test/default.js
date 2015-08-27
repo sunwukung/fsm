@@ -47,13 +47,21 @@ describe("swk-fsm", function() {
 
 describe("methods", () => {
   let machine = {};
+  const simpleStateGraph = {
+    foo: "bar",
+    bar: "baz",
+    baz: "foo"
+  };
+  const dynamicStateGraph = {
+    foo: (a) => {
+      return (a === true) ? "baz" : "bar";
+    },
+    bar: "baz",
+    baz: "foo"
+  };
 
   beforeEach(() => {
-    machine = fsm({
-      foo: "bar",
-      bar: "baz",
-      baz: "foo"
-    }, "foo");
+    machine = fsm(simpleStateGraph, "foo");
   });
 
   describe("transition", () => {
@@ -72,7 +80,15 @@ describe("methods", () => {
       expect(machine.getState()).to.equal("foo");
     });
 
+    it("passes arguments through to the state handler", () => {
+      machine = fsm(dynamicStateGraph, "foo");
+      machine.transition("baz", true);
+      expect(machine.getState()).to.equal("baz");
+    });
+
   });
+
+
 
 
 });

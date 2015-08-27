@@ -1,4 +1,4 @@
-import {guard} from "./lib.js";
+import {guard, isString, isFunction} from "./lib.js";
 
 export default function(stateGraph, initialState) {
 
@@ -8,13 +8,25 @@ export default function(stateGraph, initialState) {
 
   const fsm = {
 
-    canTransition(targetState) {
-      return stateGraph[currentState] === targetState;
+    canTransition(targetState, args) {
+      const stateHandler = stateGraph[currentState];
+      if (isString(stateHandler)) {
+        return stateHandler === targetState;
+      }
+      if (isFunction(stateHandler)) {
+        return stateHandler.apply(stateGraph, args) === targetState;
+      }
+      return false;
     },
 
-    transition(targetState) {
-      if (fsm.canTransition(targetState)) {
-        currentState = targetState;
+    transition(targetState, ...args) {
+      const stateHandler = stateGraph[currentState];
+      if (fsm.canTransition(targetState, args)) {
+        if (isFunction(stateHandler)) {
+          currentState = stateHandler.apply(stateHandler, args);
+        } else {
+          currentState = targetState;
+        }
       }
     },
 

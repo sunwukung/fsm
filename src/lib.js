@@ -1,4 +1,4 @@
-function isObject(value) {
+export function isObject(value) {
   const valueType = typeof value;
   if (value === null) {return false;}
   if (typeof value === "object") {
@@ -8,11 +8,11 @@ function isObject(value) {
   return false;
 }
 
-function isString(value) {
+export function isString(value) {
   return typeof value === "string";
 }
 
-function isFunction(value) {
+export function isFunction(value) {
   return typeof value === "function";
 }
 
