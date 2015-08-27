@@ -12,7 +12,7 @@ describe("swk-fsm", function() {
     badTypes.forEach((badStateGraph) => {
       expect(() => {
         const machine = fsm(badStateGraph, "UNINITIALIZED");
-      }).to.throw();
+      }).to.throw("state graph is not an object");
     });
   });
 
@@ -21,20 +21,20 @@ describe("swk-fsm", function() {
     badTypes.forEach((badType) => {
       expect(() => {
         const machine = fsm({foo: "bar"}, badType);
-      }).to.throw();
+      }).to.throw("initial state is not a string");
     });
   });
 
   it("will throw if the initial state is not available in the state graph", () => {
     expect(() => {
-      const machine = fsm({foo: "bar"}, "baz");
-    }).to.throw();
+      const machine = fsm({foo: "bar", bar: "baz"}, "baz");
+    }).to.throw("initial state cannot be found in state graph");
   });
 
   it("will throw if there are less than 2 states in the state graph", () => {
     expect(() => {
       const machine = fsm({foo: "bar"}, "foo");
-    }).to.throw();
+    }).to.throw("state graph is invalid");
   });
 
   it("will return a state machine if the arguments are valid", () => {

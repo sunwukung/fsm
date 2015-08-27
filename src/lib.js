@@ -1,14 +1,19 @@
-function isObject(o) {
-  const oType = typeof o;
-  let isObject = false;
-  if (oType === "object") {
-    isObject = true;
+function isObject(value) {
+  const valueType = typeof value;
+  if (value === null) {return false;}
+  if (typeof value === "object") {
+    if (value instanceof Array) {return false;}
+    return true;
   }
-  return isObject;
+  return false;
 }
 
-function isString(s) {
-  return typeof s === "string";
+function isString(value) {
+  return typeof value === "string";
+}
+
+function isFunction(value) {
+  return typeof value === "function";
 }
 
 function isValidInitialState(stateGraph, initialState) {
