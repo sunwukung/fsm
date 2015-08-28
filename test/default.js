@@ -9,10 +9,9 @@ describe("swk-fsm", function() {
   });
 
   it("will throw if the state graph is not an object", () => {
-    const badTypes = [null, false, undefined, 123, "a string", [], () => {}];
-    badTypes.forEach((badStateGraph) => {
+    [null, false, undefined, 123, "a string", [], () => {}].forEach((badArg) => {
       expect(() => {
-        const machine = fsm(badStateGraph, "UNINITIALIZED");
+        const machine = fsm(badArg, "UNINITIALIZED");
       }).to.throw("state graph is not an object");
     });
   });
@@ -85,9 +84,12 @@ describe("methods", () => {
     });
 
     it("passes arguments through to the state handler", () => {
+      let spy = sinon.spy(dynamicStateGraph, "foo");
       machine = fsm(dynamicStateGraph, "foo");
-      machine.transition("baz", true);
+      machine.transition("baz", true, "additional arguments", 123);
+      expect(spy.calledWith(true, "additional arguments", 123)).to.equal(true);
       expect(machine.getState()).to.equal("baz");
+      spy.restore();
     });
 
   });
@@ -105,8 +107,7 @@ describe("methods", () => {
     });
 
     it("will throw if the state key is not a string", () => {
-      const badArgs = [null, false, undefined, 123, [], {}, () => {}];
-      badArgs.forEach((badArg) => {
+      [null, false, undefined, 123, [], {}, () => {}].forEach((badArg) => {
         expect(() => {
           machine.onEnter(badArg, () => {});
         }).to.throw("state key is not a string");
@@ -120,8 +121,7 @@ describe("methods", () => {
     });
 
     it("will throw if the callback is not a function", () => {
-      const badArgs = [null, false, undefined, 123, "a string", [], {}];
-      badArgs.forEach((badArg) => {
+      [null, false, undefined, 123, "a string", [], {}].forEach((badArg) => {
         expect(() =>  {
           machine.onEnter("foo", badArg);
         }).to.throw("callback is not a function");
@@ -134,8 +134,90 @@ describe("methods", () => {
       machine.transition("bar");
       expect(spy.called).to.equal(true);
     });
+
+    it("will invoke the callback with the arguments passed to transition", () => {
+      const spy = sinon.spy();
+      machine.onEnter("bar", spy);
+      machine.transition("bar", 1, 2, 3);
+      expect(spy.calledWith("foo", "bar", [1, 2, 3])).to.equal(true);
+    });
+  });
+
+
+
+  describe("onExit", () => {
+
+    let machine = {};
+
+    beforeEach(() => {
+      machine = fsm(simpleStateGraph, "foo");
+    });
+
+    it("is a function", () => {
+      expect(machine.onExit).to.be.a("function");
+    });
+
+    it("will throw if the state key is not a string", () => {
+      [null, false, undefined, 123, [], {}, () => {}].forEach((badArg) => {
+        expect(() => {
+          machine.onExit(badArg, () => {});
+        }).to.throw("state key is not a string");
+      });
+    });
+
+    it("will throw if the state key does not match a key in the state graph", () => {
+      expect(() => {
+        machine.onExit("nokey", () => {});
+      }).to.throw("no state matches subscription key");
+    });
+
+    it("will throw if the callback is not a function", () => {
+      [null, false, undefined, 123, "a string", [], {}].forEach((badArg) => {
+        expect(() =>  {
+          machine.onExit("foo", badArg);
+        }).to.throw("callback is not a function");
+      });
+    });
+
+    it("will invoke the callback if the state is entered", () => {
+      const spy = sinon.spy();
+      machine.onExit("bar", spy);
+      machine.transition("bar");
+      expect(spy.called).to.equal(true);
+    });
+
+    it("will invoke the callback with the arguments passed to transition", () => {
+      const spy = sinon.spy();
+      machine.onExit("bar", spy);
+      machine.transition("bar", 1, 2, 3);
+      expect(spy.calledWith("foo", "bar", [1, 2, 3])).to.equal(true);
+    });
+  });
+
+
+  describe("onFail", () =>  {
+
+    it("is a function", () => {
+      expect(machine.onFail).to.be.a("function");
+    });
+
+    it("will throw an error if the callback is not a function", () => {
+      [null, false, undefined, 123, [], {}].forEach((badArg) => {
+        expect(() => {
+          machine.onFail(badArg);
+        }).to.throw("invalid callback supplied");
+      });
+    });
+
+    it("will invoke the callback if the machine fails to transition", () => {
+      const spy = sinon.spy();
+      machine.onFail(spy);
+      machine.transition("baz");
+      expect(spy.called).to.equal(true);
+    });
   });
 
 });
+
 
 

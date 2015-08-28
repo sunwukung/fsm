@@ -6,8 +6,8 @@
   "scripts": {
     "build": "babel src --out-dir dist",
     "build-w": "babel --watch src --out-dir dist",
-    "test": "mocha --opts test/mocha.opts test/",
-    "test:watch": "mocha --opts test/mocha.opts test/ -w"
+    "test": "mocha --opts resources/mocha.opts test/",
+    "test:watch": "mocha --opts resources/mocha.opts test/ -w"
   },
   "repository": {
     "type": "git",
