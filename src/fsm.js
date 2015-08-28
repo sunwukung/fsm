@@ -44,7 +44,6 @@ export default function(stateGraph, initialState) {
         }
       }
 
-
       if (stateAtTimeOfTransition !== currentState) {
         subscriptions.exit[currentState].forEach((subscriber) => {
           subscriber(stateAtTimeOfTransition, currentState, args);

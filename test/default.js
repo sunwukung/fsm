@@ -2,6 +2,7 @@ import {expect} from "chai";
 import fsm from "../src/fsm";
 import sinon from "sinon";
 
+
 describe("swk-fsm", function() {
 
   it("is a function", function() {
@@ -63,9 +64,11 @@ describe("methods", () => {
     baz: "foo"
   };
 
+
   beforeEach(() => {
     machine = fsm(simpleStateGraph, "foo");
   });
+
 
   describe("transition", () => {
 
@@ -93,6 +96,7 @@ describe("methods", () => {
     });
 
   });
+
 
   describe("onEnter", () => {
 
@@ -142,7 +146,6 @@ describe("methods", () => {
       expect(spy.calledWith("foo", "bar", [1, 2, 3])).to.equal(true);
     });
   });
-
 
 
   describe("onExit", () => {
