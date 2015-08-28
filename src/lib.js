@@ -31,7 +31,21 @@ function isValidStateGraph(stateGraph) {
   return Object.keys(stateGraph).length > 1;
 }
 
-export function guard(stateGraph, initialState) {
+function isValidSubscription(stateKey, stateGraph) {
+
+  const stateKeys = Object.keys(stateGraph);
+  let validStateKey = false;
+
+  stateKeys.forEach((key) => {
+    if (stateKey === key) {
+      validStateKey = true;
+    }
+  });
+
+  return validStateKey;
+};
+
+export function validateConstruction(stateGraph, initialState) {
 
   if (!isObject(stateGraph)) {
     throw new Error("state graph is not an object");
@@ -47,6 +61,22 @@ export function guard(stateGraph, initialState) {
 
   if (!isValidInitialState(stateGraph, initialState)) {
     throw new Error("initial state cannot be found in state graph");
+  }
+
+};
+
+export function validateSubscription(stateKey, callback, stateGraph) {
+
+  if(!isString(stateKey)) {
+    throw new Error("state key is not a string");
+  }
+
+  if (!isValidSubscription(stateKey, stateGraph)) {
+    throw new Error("no state matches subscription key");
+  }
+
+  if(!isFunction(callback)) {
+    throw new Error("callback is not a function");
   }
 
 };

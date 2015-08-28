@@ -1,9 +1,24 @@
-import {guard, isString, isFunction} from "./lib.js";
+import {validateConstruction, validateSubscription, isString, isFunction} from "./lib.js";
+
+function compileSubscriptionKeys(stateGraph) {
+  let subscriptionKeys = {
+    enter: {},
+    exit: {}
+  };
+
+  Object.keys(stateGraph).forEach((key) => {
+    subscriptionKeys.enter[key] = [];
+    subscriptionKeys.exit[key] = [];
+  });
+
+  return subscriptionKeys;
+
+}
 
 export default function(stateGraph, initialState) {
 
-  guard(stateGraph, initialState);
-
+  validateConstruction(stateGraph, initialState);
+  const subscriptions = compileSubscriptionKeys(stateGraph);
   let currentState = initialState;
 
   const fsm = {
@@ -27,7 +42,16 @@ export default function(stateGraph, initialState) {
         } else {
           currentState = targetState;
         }
+
+        subscriptions.enter[currentState].forEach((subscriber) => {
+          subscriber();
+        });
       }
+    },
+
+    onEnter(state, callback) {
+      validateSubscription(state, callback, stateGraph);
+      subscriptions.enter[state].push(callback);
     },
 
     getState() {

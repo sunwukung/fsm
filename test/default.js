@@ -1,5 +1,6 @@
-const expect = require("chai").expect;
-const fsm = require("../src/fsm");
+import {expect} from "chai";
+import fsm from "../src/fsm";
+import sinon from "sinon";
 
 describe("swk-fsm", function() {
 
@@ -46,12 +47,15 @@ describe("swk-fsm", function() {
 
 
 describe("methods", () => {
+
   let machine = {};
+
   const simpleStateGraph = {
     foo: "bar",
     bar: "baz",
     baz: "foo"
   };
+
   const dynamicStateGraph = {
     foo: (a) => {
       return (a === true) ? "baz" : "bar";
@@ -88,8 +92,50 @@ describe("methods", () => {
 
   });
 
+  describe("onEnter", () => {
 
+    let machine = {};
 
+    beforeEach(() => {
+      machine = fsm(simpleStateGraph, "foo");
+    });
+
+    it("is a function", () => {
+      expect(machine.onEnter).to.be.a("function");
+    });
+
+    it("will throw if the state key is not a string", () => {
+      const badArgs = [null, false, undefined, 123, [], {}, () => {}];
+      badArgs.forEach((badArg) => {
+        expect(() => {
+          machine.onEnter(badArg, () => {});
+        }).to.throw("state key is not a string");
+      });
+    });
+
+    it("will throw if the state key does not match a key in the state graph", () => {
+      expect(() => {
+        machine.onEnter("nokey", () => {});
+      }).to.throw("no state matches subscription key");
+    });
+
+    it("will throw if the callback is not a function", () => {
+      const badArgs = [null, false, undefined, 123, "a string", [], {}];
+      badArgs.forEach((badArg) => {
+        expect(() =>  {
+          machine.onEnter("foo", badArg);
+        }).to.throw("callback is not a function");
+      });
+    });
+
+    it("will invoke the callback if the state is entered", () => {
+      const spy = sinon.spy();
+      machine.onEnter("bar", spy);
+      machine.transition("bar");
+      expect(spy.called).to.equal(true);
+    });
+  });
 
 });
+
 
