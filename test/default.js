@@ -197,6 +197,36 @@ describe("methods", () => {
     });
   });
 
+  describe("onChange", () =>  {
+
+    it("is a function", () => {
+      expect(machine.onChange).to.be.a("function");
+    });
+
+    it("will throw an error if the callback is not a function", () => {
+      [null, false, undefined, 123, [], {}].forEach((badArg) => {
+        expect(() => {
+          machine.onChange(badArg);
+        }).to.throw("invalid callback supplied");
+      });
+    });
+
+    it("will invoke the callback if the machine state changes", () => {
+      const spy = sinon.spy();
+      machine.onChange(spy);
+      machine.transition("bar");
+      expect(spy.called).to.equal(true);
+    });
+
+    it("will invoke the callback with the arguments passed to transition", () => {
+      const spy = sinon.spy();
+      machine.onChange(spy);
+      machine.transition("bar", 1, 2, 3);
+      expect(spy.calledWith("foo", "bar", [1, 2, 3])).to.equal(true);
+    });
+
+  });
+
 
   describe("onFail", () =>  {
 

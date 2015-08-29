@@ -4,7 +4,8 @@ function compileSubscriptionKeys(stateGraph) {
   let subscriptionKeys = {
     enter: {},
     exit: {},
-    fail: []
+    fail: [],
+    change: []
   };
   Object.keys(stateGraph).forEach((key) => {
     subscriptionKeys.enter[key] = [];
@@ -45,10 +46,14 @@ export default function(stateGraph, initialState) {
       }
 
       if (stateAtTimeOfTransition !== currentState) {
+
         subscriptions.exit[currentState].forEach((subscriber) => {
           subscriber(stateAtTimeOfTransition, currentState, args);
         });
         subscriptions.enter[currentState].forEach((subscriber) => {
+          subscriber(stateAtTimeOfTransition, currentState, args);
+        });
+        subscriptions.change.forEach((subscriber) => {
           subscriber(stateAtTimeOfTransition, currentState, args);
         });
       } else {
@@ -67,6 +72,13 @@ export default function(stateGraph, initialState) {
     onExit(state, callback) {
       validateSubscription(state, callback, stateGraph);
       subscriptions.exit[state].push(callback);
+    },
+
+    onChange(callback) {
+      if(!isFunction(callback)) {
+        throw new Error("invalid callback supplied");
+      }
+      subscriptions.change.push(callback);
     },
 
     onFail(callback) {
