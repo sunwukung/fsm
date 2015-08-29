@@ -28,7 +28,6 @@ function isValidSubscription(stateKey, stateGraph) {
   return validStateKey;
 };
 
-
 export function isObject(value) {
   const valueType = typeof value;
   if (value === null) {return false;}
@@ -39,6 +38,14 @@ export function isObject(value) {
   return false;
 }
 
+export function isArray(value) {
+  return value instanceof Array;
+};
+
+export function isNumber(value) {
+  return typeof value ===  "number";
+};
+
 export function isString(value) {
   return typeof value === "string";
 }
@@ -46,6 +53,10 @@ export function isString(value) {
 export function isFunction(value) {
   return typeof value === "function";
 }
+
+export function validateArguments(expectation, args) {
+
+};
 
 export function validateTargetState(targetState, stateKeys) {
   if (!isString(targetState)) {
