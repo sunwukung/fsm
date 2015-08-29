@@ -1,3 +1,34 @@
+import {contains} from "./fn.js";
+
+function isValidStateGraph(stateGraph) {
+  return Object.keys(stateGraph).length > 1;
+}
+
+function isValidInitialState(stateGraph, initialState) {
+  const stateKeys = Object.keys(stateGraph);
+  let validInitialState = false;
+  stateKeys.forEach((stateKey) => {
+    if (stateKey === initialState) {
+      validInitialState = true;
+    }
+  });
+  return validInitialState;
+};
+
+function isValidSubscription(stateKey, stateGraph) {
+  const stateKeys = Object.keys(stateGraph);
+  let validStateKey = false;
+
+  stateKeys.forEach((key) => {
+    if (stateKey === key) {
+      validStateKey = true;
+    }
+  });
+
+  return validStateKey;
+};
+
+
 export function isObject(value) {
   const valueType = typeof value;
   if (value === null) {return false;}
@@ -16,33 +47,13 @@ export function isFunction(value) {
   return typeof value === "function";
 }
 
-function isValidInitialState(stateGraph, initialState) {
-  const stateKeys = Object.keys(stateGraph);
-  let validInitialState = false;
-  stateKeys.forEach((stateKey) => {
-    if (stateKey === initialState) {
-      validInitialState = true;
-    }
-  });
-  return validInitialState;
-};
-
-function isValidStateGraph(stateGraph) {
-  return Object.keys(stateGraph).length > 1;
-}
-
-function isValidSubscription(stateKey, stateGraph) {
-
-  const stateKeys = Object.keys(stateGraph);
-  let validStateKey = false;
-
-  stateKeys.forEach((key) => {
-    if (stateKey === key) {
-      validStateKey = true;
-    }
-  });
-
-  return validStateKey;
+export function validateTargetState(targetState, stateKeys) {
+  if (!isString(targetState)) {
+    throw new Error("state key must be a string");
+  };
+  if (!contains(targetState, stateKeys)) {
+    throw new Error("state key could not be found in the state graph");
+  }
 };
 
 export function validateConstruction(stateGraph, initialState) {

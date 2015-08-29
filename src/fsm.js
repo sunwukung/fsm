@@ -1,4 +1,5 @@
-import {validateConstruction, validateSubscription, isString, isFunction} from "./lib.js";
+import {validateTargetState, validateConstruction, validateSubscription, isString, isFunction, isObject} from "./validation.js";
+import {contains, filter} from "./fn.js";
 
 function compileSubscriptionKeys(stateGraph) {
   let subscriptionKeys = {
@@ -14,40 +15,40 @@ function compileSubscriptionKeys(stateGraph) {
   return subscriptionKeys;
 }
 
+function handleTransition(targetState, currentState, stateHandler, stateGraph, args) {
+
+  if (isString(stateHandler) && (stateHandler === targetState)) {
+    currentState = targetState;
+  } else {
+    if (isObject(stateHandler) && isFunction(stateHandler[targetState])) {
+      if (stateHandler[targetState].apply(stateGraph, args)) {
+        currentState = targetState;
+      }
+    }
+  }
+  return currentState;
+};
+
 export default function(stateGraph, initialState) {
 
   validateConstruction(stateGraph, initialState);
   const subscriptions = compileSubscriptionKeys(stateGraph);
   let currentState = initialState;
+  const stateKeys = Object.keys(stateGraph);
 
   const fsm = {
 
-    canTransition(targetState, args) {
-      const stateHandler = stateGraph[currentState];
-      if (isString(stateHandler)) {
-        return stateHandler === targetState;
-      }
-      if (isFunction(stateHandler)) {
-        return stateHandler.apply(stateGraph, args) === targetState;
-      }
-      return false;
-    },
 
     transition(targetState, ...args) {
       const stateHandler = stateGraph[currentState];
       const stateAtTimeOfTransition = currentState;
 
-      if (fsm.canTransition(targetState, args)) {
-        if (isFunction(stateHandler)) {
-          currentState = stateHandler.apply(stateHandler, args);
-        } else {
-          currentState = targetState;
-        }
-      }
+      validateTargetState(targetState, stateKeys);
+
+      currentState = handleTransition(targetState, currentState, stateHandler, stateGraph, args);
 
       if (stateAtTimeOfTransition !== currentState) {
-
-        subscriptions.exit[currentState].forEach((subscriber) => {
+        subscriptions.exit[stateAtTimeOfTransition].forEach((subscriber) => {
           subscriber(stateAtTimeOfTransition, currentState, args);
         });
         subscriptions.enter[currentState].forEach((subscriber) => {
@@ -69,9 +70,21 @@ export default function(stateGraph, initialState) {
       subscriptions.enter[state].push(callback);
     },
 
+    offEnter(state, callback) {
+      subscriptions.enter[state] = filter((subscriber) => {
+        return subscriber !== callback;
+      }, subscriptions.enter[state]);
+    },
+
     onExit(state, callback) {
       validateSubscription(state, callback, stateGraph);
       subscriptions.exit[state].push(callback);
+    },
+
+    offExit(state, callback) {
+      subscriptions.exit[state] = filter((subscriber) => {
+        return subscriber !== callback;
+      }, subscriptions.exit[state]);
     },
 
     onChange(callback) {
@@ -81,11 +94,23 @@ export default function(stateGraph, initialState) {
       subscriptions.change.push(callback);
     },
 
+    offChange(callback) {
+      subscriptions.change = filter((subscriber) => {
+        return subscriber !== callback;
+      }, subscriptions.change);
+    },
+
     onFail(callback) {
       if(!isFunction(callback)) {
         throw new Error("invalid callback supplied");
       }
       subscriptions.fail.push(callback);
+    },
+
+    offFail(callback) {
+      subscriptions.fail = filter((subscriber) => {
+        return subscriber !== callback;
+      }, subscriptions.fail);
     },
 
     getState() {
