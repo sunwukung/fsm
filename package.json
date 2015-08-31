@@ -7,7 +7,8 @@
     "build": "babel src --out-dir dist",
     "build:watch": "babel --watch src --out-dir dist",
     "test": "find ./src ./test -name '*.js' | xargs mocha --opts resources/mocha.opts",
-    "test:watch": "npm run test -- -w"
+    "test:watch": "npm run test -- -w",
+    "report": "istanbul cover node_modules/.bin/_mocha -- --compilers js:babel/register"
   },
   "repository": {
     "type": "git",
