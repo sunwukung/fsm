@@ -1,4 +1,13 @@
 import {contains} from "./fn.js";
+import {isObject, isArray, isNumber, isString, isFunction} from "./types";
+
+let errorReporter = function(message) {
+  throw new Error(message);
+};
+
+function reportError(message) {
+  errorReporter(message);
+};
 
 function isValidStateGraph(stateGraph) {
   return Object.keys(stateGraph).length > 1;
@@ -28,61 +37,35 @@ function isValidSubscription(stateKey, stateGraph) {
   return validStateKey;
 };
 
-export function isObject(value) {
-  const valueType = typeof value;
-  if (value === null) {return false;}
-  if (typeof value === "object") {
-    if (value instanceof Array) {return false;}
-    return true;
-  }
-  return false;
-}
-
-export function isArray(value) {
-  return value instanceof Array;
-};
-
-export function isNumber(value) {
-  return typeof value ===  "number";
-};
-
-export function isString(value) {
-  return typeof value === "string";
-}
-
-export function isFunction(value) {
-  return typeof value === "function";
-}
-
 export function validateArguments(expectation, args) {
 
 };
 
 export function validateTargetState(targetState, stateKeys) {
   if (!isString(targetState)) {
-    throw new Error("state key must be a string");
+    reportError("state key must be a string");
   };
   if (!contains(targetState, stateKeys)) {
-    throw new Error("state key could not be found in the state graph");
+    reportError("state key could not be found in the state graph");
   }
 };
 
 export function validateConstruction(stateGraph, initialState) {
 
   if (!isObject(stateGraph)) {
-    throw new Error("state graph is not an object");
+    reportError("state graph is not an object");
   }
 
   if (!isString(initialState)) {
-    throw new Error("initial state is not a string");
+    reportError("initial state is not a string");
   }
 
   if (!isValidStateGraph(stateGraph)) {
-    throw new Error("state graph is invalid");
+    reportError("state graph is invalid");
   }
 
   if (!isValidInitialState(stateGraph, initialState)) {
-    throw new Error("initial state cannot be found in state graph");
+    reportError("initial state cannot be found in state graph");
   }
 
 };
@@ -90,15 +73,15 @@ export function validateConstruction(stateGraph, initialState) {
 export function validateSubscription(stateKey, callback, stateGraph) {
 
   if(!isString(stateKey)) {
-    throw new Error("state key is not a string");
+    reportError("state key is not a string");
   }
 
   if (!isValidSubscription(stateKey, stateGraph)) {
-    throw new Error("no state matches subscription key");
+    reportError("no state matches subscription key");
   }
 
   if(!isFunction(callback)) {
-    throw new Error("callback is not a function");
+    reportError("callback is not a function");
   }
 
 };

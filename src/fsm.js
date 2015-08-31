@@ -1,6 +1,10 @@
-import {validateTargetState, validateConstruction, validateSubscription, isString, isFunction, isObject} from "./validation.js";
-import {contains, filter} from "./fn.js";
+import {validateTargetState, validateConstruction, validateSubscription} from "./validation";
+import {isFunction, isArray, isNumber, isObject, isString} from "./types";
+import {contains, filter} from "./fn";
 
+/**
+* @param {object} stateGraph
+*/
 function compileSubscriptionKeys(stateGraph) {
   let subscriptionKeys = {
     enter: {},
@@ -15,8 +19,14 @@ function compileSubscriptionKeys(stateGraph) {
   return subscriptionKeys;
 }
 
+/**
+* @param {string} targetState
+* @param {string} currentState
+* @param {mixed} stateHandler
+* @param {object} stateGraph
+* @param {array} args
+*/
 function handleTransition(targetState, currentState, stateHandler, stateGraph, args) {
-
   if (isString(stateHandler) && (stateHandler === targetState)) {
     currentState = targetState;
   } else {
@@ -29,16 +39,19 @@ function handleTransition(targetState, currentState, stateHandler, stateGraph, a
   return currentState;
 };
 
+/**
+* @param {object} stateGraph
+* @param {string} initialState
+*/
 export default function(stateGraph, initialState) {
-
   validateConstruction(stateGraph, initialState);
   const subscriptions = compileSubscriptionKeys(stateGraph);
   let currentState = initialState;
   const stateKeys = Object.keys(stateGraph);
-
   const fsm = {
-
-
+    /**
+     * @param {string} targetState
+     */
     transition(targetState, ...args) {
       const stateHandler = stateGraph[currentState];
       const stateAtTimeOfTransition = currentState;
@@ -65,28 +78,47 @@ export default function(stateGraph, initialState) {
 
     },
 
-    onEnter(state, callback) {
-      validateSubscription(state, callback, stateGraph);
-      subscriptions.enter[state].push(callback);
+    /**
+     * @param {string} stateKey
+     * @param {function} callback
+     */
+    onEnter(stateKey, callback) {
+      validateSubscription(stateKey, callback, stateGraph);
+      subscriptions.enter[stateKey].push(callback);
     },
 
-    offEnter(state, callback) {
-      subscriptions.enter[state] = filter((subscriber) => {
+    /**
+     * @param {string} stateKey
+     * @param {function} callback
+     */
+    offEnter(stateKey, callback) {
+      subscriptions.enter[stateKey] = filter((subscriber) => {
         return subscriber !== callback;
-      }, subscriptions.enter[state]);
+      }, subscriptions.enter[stateKey]);
     },
 
+    /**
+     * @param {string} state
+     * @param {function} callback
+     */
     onExit(state, callback) {
       validateSubscription(state, callback, stateGraph);
       subscriptions.exit[state].push(callback);
     },
 
+    /**
+     * @param {string} state
+     * @param {function} callback
+     */
     offExit(state, callback) {
       subscriptions.exit[state] = filter((subscriber) => {
         return subscriber !== callback;
       }, subscriptions.exit[state]);
     },
 
+    /**
+     * @param {function} callback
+     */
     onChange(callback) {
       if(!isFunction(callback)) {
         throw new Error("invalid callback supplied");
@@ -94,12 +126,18 @@ export default function(stateGraph, initialState) {
       subscriptions.change.push(callback);
     },
 
+    /**
+     * @param {function} callback
+     */
     offChange(callback) {
       subscriptions.change = filter((subscriber) => {
         return subscriber !== callback;
       }, subscriptions.change);
     },
 
+    /**
+     * @param {function} callback
+     */
     onFail(callback) {
       if(!isFunction(callback)) {
         throw new Error("invalid callback supplied");
@@ -107,6 +145,9 @@ export default function(stateGraph, initialState) {
       subscriptions.fail.push(callback);
     },
 
+    /**
+     * @param {function} callback
+     */
     offFail(callback) {
       subscriptions.fail = filter((subscriber) => {
         return subscriber !== callback;
