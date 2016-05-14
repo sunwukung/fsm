@@ -1,2 +1,2 @@
 #!/bin/sh
-./node_modules/babel/bin/babel src --out-dir dist
+./node_modules/babel-cli/bin/babel.js src --out-dir dist
