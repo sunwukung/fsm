@@ -153,11 +153,20 @@ export default function(stateGraph, initialState) {
         return subscriber !== callback;
       }, subscriptions.fail);
     },
-
     getState() {
       return currentState;
+    },
+    trigger(action, ...args) {
+      if(!isString(action)) {
+        throw new Error("trigger requires string as first argument");
+      }
+      // get current state node
+      if(isObject(stateGraph[currentState]["action"])) {
+        if(isFunction(stateGraph[currentState].action[action])) {
+          console.log("triggering");
+        }
+      }
     }
-
   };
 
   return fsm;
