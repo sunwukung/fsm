@@ -9,6 +9,7 @@ function reportError(message) {
   errorReporter(message);
 };
 
+// TODO: check all the target states describe in the graph too
 function isValidStateGraph(stateGraph) {
   return Object.keys(stateGraph).length > 1;
 }
@@ -27,19 +28,14 @@ function isValidInitialState(stateGraph, initialState) {
 function isValidSubscription(stateKey, stateGraph) {
   const stateKeys = Object.keys(stateGraph);
   let validStateKey = false;
-
   stateKeys.forEach((key) => {
     if (stateKey === key) {
       validStateKey = true;
     }
   });
-
   return validStateKey;
 };
 
-export function validateArguments(expectation, args) {
-
-};
 
 export function validateTargetState(targetState, stateKeys) {
   if (!isString(targetState)) {
@@ -50,24 +46,69 @@ export function validateTargetState(targetState, stateKeys) {
   }
 };
 
-export function validateConstruction(stateGraph, initialState) {
+export function validateConstruction(stateGraph) {
 
   if (!isObject(stateGraph)) {
     reportError("state graph is not an object");
   }
 
-  if (!isString(initialState)) {
-    reportError("initial state is not a string");
+  const states = stateGraph.states;
+  const initialState = stateGraph.initial;
+  const actions = stateGraph.actions;
+
+  if (states === undefined) {
+    reportError("'states' were not defined");
   }
 
-  if (!isValidStateGraph(stateGraph)) {
+  if (initialState === undefined) {
+    reportError("'initial' was not defined");
+  }
+
+  if (!isObject(states)) {
+    reportError("'states' is not an object");
+  }
+
+  if (!isString(initialState)) {
+    reportError("'initial' is not a string");
+  }
+
+  if (!isValidStateGraph(states)) {
     reportError("state graph is invalid");
   }
 
-  if (!isValidInitialState(stateGraph, initialState)) {
+  if (!isValidInitialState(states, initialState)) {
     reportError("initial state cannot be found in state graph");
   }
 
+  validateActions(actions, states);
+
+};
+
+export function validateActions(actions, states) {
+  if (actions !== undefined) {
+    if (!isObject(actions)) {
+      reportError("'actions' should be an object (if defined)");
+    }
+    const actionKeys = collectActionKeys(actions);
+    const stateKeys = Object.keys(states);
+
+
+  }
+};
+
+export function collectActionKeys(actions) {
+  const keys = [];
+  for (let action in actions) {
+    if (actions.hasOwnProperty(action)) {
+      const actionKeys = [];
+      // parse arrays
+      // parse strings
+      // add to keys
+      // also collect to targets
+      // de-dupe the array
+    }
+  }
+  return [];
 };
 
 export function validateSubscription(stateKey, callback, stateGraph) {

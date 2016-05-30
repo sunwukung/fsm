@@ -1,5 +1,5 @@
 import {validateTargetState, validateConstruction, validateSubscription} from "./validation";
-import {isFunction, isArray, isNumber, isObject, isString} from "./types";
+import {isArray, isBool, isFunction, isNumber, isObject, isString} from "./types";
 import {contains, filter} from "./fn";
 
 /**
@@ -19,6 +19,41 @@ function compileSubscriptionKeys(stateGraph) {
   return subscriptionKeys;
 }
 
+function _useStringHandler(stateHandler, targetState, currentState) {
+  return stateHandler === targetState ? targetState : currentState;
+}
+
+function _useFunctionHandler(stateHandler, targetState, currentState, stateGraph, args) {
+  const result = stateHandler.apply(stateGraph, args);
+  if (result === true) {
+    return targetState;
+  }
+  if (result !== false) {
+    console.warn("STATE HANDLER DID NOT RETURN A BOOLEAN");
+  } else {
+    return currentState;
+  }
+}
+
+function _useArrayHandler(stateHandler, targetState, currentState) {
+  let found = false;
+  stateHandler.forEach((availableState) => {
+    if (!found && (availableState === targetState)) {
+      found = true;
+    }
+  });
+  return found ? targetState : currentState;
+}
+
+function _useObjectHandler(stateHandler, targetState, currentState, stateGraph, args) {
+  if (isString(stateHandler[targetState])) {
+    return _useStringHandler(stateHandler[targetState], targetState, currentState);
+  }
+  if (isFunction(stateHandler[targetState])) {
+    return _useFunctionHandler(stateHandler[targetState], targetState, currentState, stateGraph, args);
+  }
+}
+
 /**
 * @param {string} targetState
 * @param {string} currentState
@@ -27,30 +62,11 @@ function compileSubscriptionKeys(stateGraph) {
 * @param {array} args
 */
 function handleTransition(targetState, currentState, stateHandler, stateGraph, args) {
-  if (isString(stateHandler) && (stateHandler === targetState)) {
-    console.log("THE STATE HANDLER IS A STRING");
-    return targetState;
+  if (isString(stateHandler)) {
+    return _useStringHandler(stateHandler, targetState, currentState);
   }
   if (isObject(stateHandler)) {
-    console.log("THE STATE HANDLER IS AN OBJECT");
-    if (isString(stateHandler[targetState])) {
-      console.log("THE STATE HANDLER IS A STRING");
-      return stateHandler[targetState];
-    }
-    if (isFunction(stateHandler[targetState])) {
-      console.log("THE STATE HANDLER IS AN OBJECT");
-      if (stateHandler[targetState].apply(stateGraph, args)) {
-        currentState = targetState;
-      } else {
-        console.log("THE STATEHANDLER DID NOT RETURN A NEW STATE");
-      }
-    } else {
-      console.log(stateHandler[targetState]);
-      console.log(stateHandler);
-      console.log("WAS EXPECTING A FUNCTION");
-    }
-  } else {
-    console.log("WAS EXPECTING AN OBJECT");
+    return _useObjectHandler(stateHandler, targetState, currentState, stateGraph, args);
   }
   return currentState;
 };
@@ -62,34 +78,34 @@ function handleTransition(targetState, currentState, stateHandler, stateGraph, a
 export default function(spec) {
   validateConstruction(spec);
   const states = spec.states;
+  const stateKeys = Object.keys(states);
   const subscriptions = compileSubscriptionKeys(states);
   let currentState = spec.initial;
-  const stateKeys = Object.keys(states);
+  let nextState;
+
   const fsm = {
     /**
      * @param {string} targetState
      */
     transition(targetState, ...args) {
       const stateHandler = states[currentState];
-      const stateAtTimeOfTransition = currentState;
+      const startState = currentState;
 
       validateTargetState(targetState, stateKeys);
-      currentState = handleTransition(targetState, currentState, stateHandler, states, args);
-
-      if (stateAtTimeOfTransition !== currentState) {
-        console.log("THE STATE SHOULD CHANGE");
-        subscriptions.exit[stateAtTimeOfTransition].forEach((subscriber) => {
-          subscriber(stateAtTimeOfTransition, currentState, args);
+      nextState = handleTransition(targetState, currentState, stateHandler, states, args);
+      if (startState !== nextState) {
+        subscriptions.exit[startState].forEach((subscriber) => {
+          subscriber(startState, nextState, args);
         });
-        subscriptions.enter[currentState].forEach((subscriber) => {
-          subscriber(stateAtTimeOfTransition, currentState, args);
+        subscriptions.enter[nextState].forEach((subscriber) => {
+          subscriber(startState, nextState, args);
         });
         subscriptions.change.forEach((subscriber) => {
-          subscriber(stateAtTimeOfTransition, currentState, args);
+          subscriber(startState, nextState, args);
         });
       } else {
         subscriptions.fail.forEach((subscriber) => {
-          subscriber(stateAtTimeOfTransition, args);
+          subscriber(startState, args);
         });
       }
 
@@ -171,7 +187,7 @@ export default function(spec) {
       }, subscriptions.fail);
     },
     getState() {
-      return currentState;
+      return nextState;
     },
     trigger(action, ...args) {
       if(!isString(action)) {
