@@ -28,13 +28,29 @@ function compileSubscriptionKeys(stateGraph) {
 */
 function handleTransition(targetState, currentState, stateHandler, stateGraph, args) {
   if (isString(stateHandler) && (stateHandler === targetState)) {
-    currentState = targetState;
-  } else {
-    if (isObject(stateHandler) && isFunction(stateHandler[targetState])) {
+    console.log("THE STATE HANDLER IS A STRING");
+    return targetState;
+  }
+  if (isObject(stateHandler)) {
+    console.log("THE STATE HANDLER IS AN OBJECT");
+    if (isString(stateHandler[targetState])) {
+      console.log("THE STATE HANDLER IS A STRING");
+      return stateHandler[targetState];
+    }
+    if (isFunction(stateHandler[targetState])) {
+      console.log("THE STATE HANDLER IS AN OBJECT");
       if (stateHandler[targetState].apply(stateGraph, args)) {
         currentState = targetState;
+      } else {
+        console.log("THE STATEHANDLER DID NOT RETURN A NEW STATE");
       }
+    } else {
+      console.log(stateHandler[targetState]);
+      console.log(stateHandler);
+      console.log("WAS EXPECTING A FUNCTION");
     }
+  } else {
+    console.log("WAS EXPECTING AN OBJECT");
   }
   return currentState;
 };
@@ -43,24 +59,25 @@ function handleTransition(targetState, currentState, stateHandler, stateGraph, a
 * @param {object} stateGraph
 * @param {string} initialState
 */
-export default function(stateGraph, initialState) {
-  validateConstruction(stateGraph, initialState);
-  const subscriptions = compileSubscriptionKeys(stateGraph);
-  let currentState = initialState;
-  const stateKeys = Object.keys(stateGraph);
+export default function(spec) {
+  validateConstruction(spec);
+  const states = spec.states;
+  const subscriptions = compileSubscriptionKeys(states);
+  let currentState = spec.initial;
+  const stateKeys = Object.keys(states);
   const fsm = {
     /**
      * @param {string} targetState
      */
     transition(targetState, ...args) {
-      const stateHandler = stateGraph[currentState];
+      const stateHandler = states[currentState];
       const stateAtTimeOfTransition = currentState;
 
       validateTargetState(targetState, stateKeys);
-
-      currentState = handleTransition(targetState, currentState, stateHandler, stateGraph, args);
+      currentState = handleTransition(targetState, currentState, stateHandler, states, args);
 
       if (stateAtTimeOfTransition !== currentState) {
+        console.log("THE STATE SHOULD CHANGE");
         subscriptions.exit[stateAtTimeOfTransition].forEach((subscriber) => {
           subscriber(stateAtTimeOfTransition, currentState, args);
         });
@@ -83,7 +100,7 @@ export default function(stateGraph, initialState) {
      * @param {function} callback
      */
     onEnter(stateKey, callback) {
-      validateSubscription(stateKey, callback, stateGraph);
+      validateSubscription(stateKey, callback, states);
       subscriptions.enter[stateKey].push(callback);
     },
 
@@ -102,7 +119,7 @@ export default function(stateGraph, initialState) {
      * @param {function} callback
      */
     onExit(state, callback) {
-      validateSubscription(state, callback, stateGraph);
+      validateSubscription(state, callback, states);
       subscriptions.exit[state].push(callback);
     },
 
@@ -160,12 +177,8 @@ export default function(stateGraph, initialState) {
       if(!isString(action)) {
         throw new Error("trigger requires string as first argument");
       }
-      // get current state node
-      if(isObject(stateGraph[currentState]["action"])) {
-        if(isFunction(stateGraph[currentState].action[action])) {
-          console.log("triggering");
-        }
-      }
+
+      //
     }
   };
 

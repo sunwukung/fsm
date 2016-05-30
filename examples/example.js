@@ -1,10 +1,35 @@
 import fsmFactory from "../src/fsm";
-const example = document.getElementById("example");
-const next = document.getElementById("next-btn");
-
 import stateConfig from "./state-config.js";
-console.log(stateConfig);
 
-next.addEventListener("click", () => {
-  console.log("clicked");
+const machine = fsmFactory(stateConfig);
+const example = document.getElementById("example");
+const nextButton = document.getElementById("next-btn");
+const fooButton = document.getElementById("foo-btn");
+const barButton = document.getElementById("bar-btn");
+const bazButton = document.getElementById("baz-btn");
+
+const stateDisplay = document.getElementById("state-display");
+
+machine.onChange(() => {
+  stateDisplay.innerHTML = machine.getState();
+});
+
+machine.onFail(() => {
+  stateDisplay.innerHTML = "ERROR";
+});
+
+nextButton.addEventListener("click", () => {
+  machine.trigger("next");
+});
+
+fooButton.addEventListener("click", () => {
+  machine.transition("foo");
+});
+
+barButton.addEventListener("click", () => {
+  machine.transition("bar");
+});
+
+bazButton.addEventListener("click", () => {
+  machine.transition("baz");
 });
