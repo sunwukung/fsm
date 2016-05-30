@@ -31,13 +31,17 @@ var stateGraph = {
     actions: {
         next: {
             foo: "bar"; // single static, target state
-            bar: { // multiple target states
-                baz: "baz"
-                foo: () => ("foo")
+            bar: ["foo", "baz"] // multiple target states
+            bar: { // multiple target states with validation
+                baz: () => (false)
+                foo: () => (true)
+                baz: "foo" // accepts mixed
             },
         }
     }
 }
+
+NOTE: use actions for dynamic target generation, machine states must be deterministic
 
 ### MACHINE
 
