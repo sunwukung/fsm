@@ -12,6 +12,10 @@ export function isArray(value) {
   return value instanceof Array;
 };
 
+export function isBool(value) {
+  return value === true || value === false;
+}
+
 export function isNumber(value) {
   return typeof value ===  "number";
 };
