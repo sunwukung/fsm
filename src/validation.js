@@ -1,5 +1,5 @@
 import {contains} from "./fn.js";
-import {isObject, isArray, isNumber, isString, isFunction} from "./types";
+import {isObject, isBoolean, isArray, isNumber, isString, isFunction} from "./types";
 
 let errorReporter = function(message) {
   throw new Error(message);
@@ -8,11 +8,6 @@ let errorReporter = function(message) {
 function reportError(message) {
   errorReporter(message);
 };
-
-// TODO: check all the target states describe in the graph too
-function isValidStateGraph(stateGraph) {
-  return Object.keys(stateGraph).length > 1;
-}
 
 function isValidInitialState(stateGraph, initialState) {
   const stateKeys = Object.keys(stateGraph);
@@ -127,6 +122,37 @@ export function validateSubscription(stateKey, callback, stateGraph) {
 
 };
 
+// TODO: check all the target states describe in the graph too
+export function isValidStateGraph(stateGraph) {
+  // there must be more than one state
+  const states = Object.keys(stateGraph);
+  return states.length > 1;
+};
 
 
+function updateMultipleKeys(newKeys, keys) {
+  newKeys.forEach((key) => {
+    if (!contains(key, keys)) {
+      keys.push(key);
+    }
+  });
+  return keys;
+}
+
+export function collectTargetStates(stateGraph) {
+  let targetStates = [];
+  for (let stateHandler in stateGraph) {
+    const handler = stateGraph[stateHandler];
+    if (isString(handler) && !contains(handler, targetStates)) {
+      targetStates.push(handler);
+    }
+    if (isArray(handler)) {
+      targetStates = updateMultipleKeys(handler, targetStates);
+    }
+    if (isObject(handler)) {
+      targetStates = updateMultipleKeys(Object.keys(handler), targetStates);
+    }
+  }
+  return targetStates.sort();
+};
 
