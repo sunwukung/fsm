@@ -12,7 +12,7 @@ export function isArray(value) {
   return value instanceof Array;
 };
 
-export function isBool(value) {
+export function isBoolean(value) {
   return value === true || value === false;
 }
 

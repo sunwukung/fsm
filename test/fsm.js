@@ -11,28 +11,34 @@ const simpleStateGraph = {
   }
 };
 
-const dynamicStateGraph = {
+const complexStateGraph = {
   initial: "foo",
   states: {
-    foo: {
-      bar: (a) => {
-        return a === true;
-      }
+    foo: "baz",
+    bar: ["foo", "baz"],
+    baz: {
+      foo: (predicateResult) => {
+        return predicateResult;
+      },
+      bar: () => {
+        return "not a string";
+      },
+      bang: true
     },
-    bar: "baz",
-    baz: "foo"
-  }
+    bang: "foo",
+  },
 };
 
 describe("methods", () => {
 
   let machine = {};
 
-  beforeEach(() => {
-    machine = fsm(simpleStateGraph);
-  });
-
   describe("transition", () => {
+
+    beforeEach(() => {
+      machine = fsm(simpleStateGraph);
+    });
+
 
     it("is a function", () => {
       expect(machine.transition).to.be.a("function");
@@ -52,24 +58,72 @@ describe("methods", () => {
       }).to.throw("state key could not be found in the state graph");
     });
 
-    it("moves the machine from its current state to the specified state", () => {
-      machine.transition("bar");
-      expect(machine.getState()).to.equal("bar");
+    it("leaves the machine in it's original state", () => {
+      machine.transition("baz");
+      expect(machine.getState()).to.equal("foo");
     });
 
+  });
 
-    it("passes arguments through to the state handler", () => {
-      let spy = sinon.spy(dynamicStateGraph.states.foo, "bar");
-      machine = fsm(dynamicStateGraph);
-      machine.transition("bar", true, "additional arguments", 123);
-      expect(spy.calledWith(true, "additional arguments", 123)).to.equal(true);
-      expect(machine.getState()).to.equal("bar");
+  describe("simple state handlers", () =>  {
+
+    beforeEach(() => {
+      machine = fsm(complexStateGraph);
+    });
+
+    it("strings", () => {
+      machine.transition("baz");
+      expect(machine.getState()).to.equal("baz");
+    });
+
+    it("arrays", () => {
+      machine.transition("bar");
+      machine.transition("foo");
+      expect(machine.getState()).to.equal("foo");
+    });
+  });
+
+  describe("object state handlers can contain two property types", () =>  {
+    let spy;
+
+    beforeEach(() => {
+      spy = sinon.spy(complexStateGraph.states.baz, "foo");
+      machine = fsm(complexStateGraph);
+    });
+
+    afterEach(() => {
       spy.restore();
     });
 
-    it("leaves the machine in it's original state if the transition is not possible", () => {
+    it("boolean", () =>  {
       machine.transition("baz");
-      expect(machine.getState()).to.equal("foo");
+      machine.transition("bang");
+      expect(machine.getState()).to.equal("bang");
+    });
+
+    describe("functions (predicates)", () =>  {
+
+      it("passes arguments to the predicate", () => {
+        machine.transition("baz");
+        machine.transition("foo", true, "additional arguments", 123);
+        expect(spy.calledWith(true, "additional arguments", 123)).to.equal(true);
+        expect(machine.getState()).to.equal("foo");
+      });
+
+      it("performs transition based on boolean result of predicate", () =>  {
+        machine.transition("baz");
+        machine.transition("foo", false);
+        expect(machine.getState()).to.equal("baz");
+      });
+
+      it("ignores the result if it is not a boolean", () =>  {
+        // this test will be more interesting if we can trigger the
+        // error reporter from here
+        machine.transition("baz");
+        machine.transition("bar");
+        expect(machine.getState()).to.equal("baz");
+      });
+
     });
 
   });

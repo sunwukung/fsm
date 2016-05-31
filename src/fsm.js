@@ -1,58 +1,7 @@
 import {validateTargetState, validateConstruction, validateSubscription} from "./validation";
-import {isArray, isBool, isFunction, isNumber, isObject, isString} from "./types";
+import {isArray, isFunction, isNumber, isObject, isString} from "./types";
 import {contains, filter} from "./fn";
 
-/**
-* @param {object} stateGraph
-*/
-function compileSubscriptionKeys(stateGraph) {
-  let subscriptionKeys = {
-    enter: {},
-    exit: {},
-    fail: [],
-    change: []
-  };
-  Object.keys(stateGraph).forEach((key) => {
-    subscriptionKeys.enter[key] = [];
-    subscriptionKeys.exit[key] = [];
-  });
-  return subscriptionKeys;
-}
-
-function _useStringHandler(stateHandler, targetState, currentState) {
-  return stateHandler === targetState ? targetState : currentState;
-}
-
-function _useFunctionHandler(stateHandler, targetState, currentState, stateGraph, args) {
-  const result = stateHandler.apply(stateGraph, args);
-  if (result === true) {
-    return targetState;
-  }
-  if (result !== false) {
-    console.warn("STATE HANDLER DID NOT RETURN A BOOLEAN");
-  } else {
-    return currentState;
-  }
-}
-
-function _useArrayHandler(stateHandler, targetState, currentState) {
-  let found = false;
-  stateHandler.forEach((availableState) => {
-    if (!found && (availableState === targetState)) {
-      found = true;
-    }
-  });
-  return found ? targetState : currentState;
-}
-
-function _useObjectHandler(stateHandler, targetState, currentState, stateGraph, args) {
-  if (isString(stateHandler[targetState])) {
-    return _useStringHandler(stateHandler[targetState], targetState, currentState);
-  }
-  if (isFunction(stateHandler[targetState])) {
-    return _useFunctionHandler(stateHandler[targetState], targetState, currentState, stateGraph, args);
-  }
-}
 
 /**
 * @param {string} targetState
@@ -65,9 +14,16 @@ function handleTransition(targetState, currentState, stateHandler, stateGraph, a
   if (isString(stateHandler)) {
     return _useStringHandler(stateHandler, targetState, currentState);
   }
+  if (isArray(stateHandler)) {
+    return _useArrayHandler(stateHandler, targetState, currentState);
+  }
   if (isObject(stateHandler)) {
     return _useObjectHandler(stateHandler, targetState, currentState, stateGraph, args);
   }
+  console.warn(
+    "stateHandler was an unsupported type - expected [ string | array | function ] - received",
+    typeof stateHandler
+  );
   return currentState;
 };
 
@@ -79,7 +35,7 @@ export default function(spec) {
   validateConstruction(spec);
   const states = spec.states;
   const stateKeys = Object.keys(states);
-  const subscriptions = compileSubscriptionKeys(states);
+  const subscriptions = _compileSubscriptionKeys(states);
   let currentState = spec.initial;
   let nextState;
 
@@ -90,9 +46,8 @@ export default function(spec) {
     transition(targetState, ...args) {
       const stateHandler = states[currentState];
       const startState = currentState;
-
       validateTargetState(targetState, stateKeys);
-      nextState = handleTransition(targetState, currentState, stateHandler, states, args);
+      nextState = handleTransition(targetState, startState, stateHandler, states, args);
       if (startState !== nextState) {
         subscriptions.exit[startState].forEach((subscriber) => {
           subscriber(startState, nextState, args);
@@ -103,6 +58,7 @@ export default function(spec) {
         subscriptions.change.forEach((subscriber) => {
           subscriber(startState, nextState, args);
         });
+        currentState = nextState;
       } else {
         subscriptions.fail.forEach((subscriber) => {
           subscriber(startState, args);
@@ -186,17 +142,70 @@ export default function(spec) {
         return subscriber !== callback;
       }, subscriptions.fail);
     },
+
     getState() {
       return nextState;
     },
+
     trigger(action, ...args) {
       if(!isString(action)) {
         throw new Error("trigger requires string as first argument");
       }
-
-      //
     }
   };
 
   return fsm;
 }
+
+/**
+* @param {object} stateGraph
+*/
+function _compileSubscriptionKeys(stateGraph) {
+  let subscriptionKeys = {
+    enter: {},
+    exit: {},
+    fail: [],
+    change: []
+  };
+  Object.keys(stateGraph).forEach((key) => {
+    subscriptionKeys.enter[key] = [];
+    subscriptionKeys.exit[key] = [];
+  });
+  return subscriptionKeys;
+}
+
+
+function _useStringHandler(stateHandler, targetState, currentState) {
+  return stateHandler === targetState ? targetState : currentState;
+}
+
+function _useFunctionHandler(stateHandler, targetState, currentState, stateGraph, args) {
+  const result = stateHandler.apply(stateGraph, args);
+  if (result === true) {
+    return targetState;
+  }
+  if (result !== false) {
+    console.warn("predicate state handler did not return a boolean");
+  }
+  return currentState;
+}
+
+function _useArrayHandler(stateHandler, targetState, currentState) {
+  let found = false;
+  stateHandler.forEach((availableState) => {
+    if (!found && (availableState === targetState)) {
+      found = true;
+    }
+  });
+  return found ? targetState : currentState;
+}
+
+function _useObjectHandler(stateHandler, targetState, currentState, stateGraph, args) {
+  if (stateHandler[targetState] === true) {
+    return stateHandler[targetState] ? targetState : currentState;
+  }
+  if (isFunction(stateHandler[targetState])) {
+    return _useFunctionHandler(stateHandler[targetState], targetState, currentState, stateGraph, args);
+  }
+}
+
