@@ -1,5 +1,10 @@
 import {expect} from "chai";
-import {collectTargetStates, isValidStateGraph, validateActions, collectActionKeys} from "../src/validation";
+import {
+  collectTargetStates,
+  isValidStateGraph,
+  validateActions,
+  collectActionKeys
+} from "../src/validation";
 
 const complexStateGraph = {
   states: {
@@ -55,14 +60,29 @@ describe("isValidStateGraph", () =>  {
   });
 
   it("rejects state graphs with less than two keys", () =>  {
-    expect(isValidStateGraph({one: "not valid"})).to.equal(false);
+    expect(() => {
+      isValidStateGraph({one: "not valid"});
+    }).to.throw("there is only one state in the state graph");
   });
 
-  it.skip("rejects state graphs with invalid target states", () =>  {
-    expect(isValidStateGraph({
-      a: "b",
-      b: "c"
-    })).to.equal(false);
+  it("rejects state graphs with unreachable states", () => {
+    expect(() => {
+      isValidStateGraph({
+        one: "three",
+        two: "one",
+        three: "one"
+      });
+    }).to.throw("these states are unreachable: two");
+  });
+
+  it("rejects state graphs with invalid target states", () =>  {
+    expect(() => {
+      isValidStateGraph({
+        one: "two",
+        two: ["one", "three"],
+        three: "four"
+      });
+    }).to.throw("these target states do not exist in the graph: four");
   });
 
 });

@@ -1,5 +1,12 @@
-import {contains} from "./fn.js";
-import {isObject, isBoolean, isArray, isNumber, isString, isFunction} from "./types";
+import {contains, difference} from "ramda";
+import {
+  isObject,
+  isBoolean,
+  isArray,
+  isNumber,
+  isString,
+  isFunction
+} from "./types";
 
 let errorReporter = function(message) {
   throw new Error(message);
@@ -67,12 +74,12 @@ export function validateConstruction(stateGraph) {
     reportError("'initial' is not a string");
   }
 
-  if (!isValidStateGraph(states)) {
-    reportError("state graph is invalid");
-  }
-
   if (!isValidInitialState(states, initialState)) {
     reportError("initial state cannot be found in state graph");
+  }
+
+  if (!isValidStateGraph(states, initialState)) {
+    reportError("state graph is invalid");
   }
 
   validateActions(actions, states);
@@ -86,8 +93,6 @@ export function validateActions(actions, states) {
     }
     const actionKeys = collectActionKeys(actions);
     const stateKeys = Object.keys(states);
-
-
   }
 };
 
@@ -107,26 +112,38 @@ export function collectActionKeys(actions) {
 };
 
 export function validateSubscription(stateKey, callback, stateGraph) {
-
   if(!isString(stateKey)) {
     reportError("state key is not a string");
   }
-
   if (!isValidSubscription(stateKey, stateGraph)) {
     reportError("no state matches subscription key");
   }
-
   if(!isFunction(callback)) {
     reportError("callback is not a function");
   }
-
 };
 
-// TODO: check all the target states describe in the graph too
-export function isValidStateGraph(stateGraph) {
-  // there must be more than one state
+export function isValidStateGraph(stateGraph, initialState) {
   const states = Object.keys(stateGraph);
-  return states.length > 1;
+  if (states.length <= 1) {
+    reportError("there is only one state in the state graph");
+    return false;
+  }
+  const targetStates = collectTargetStates(stateGraph);
+  const stateDiff = difference(states, targetStates);
+  if ((stateDiff.length === 1) && (stateDiff[0] === initialState)) {
+    return true;
+  }
+  if (stateDiff.length > 0) {
+    reportError("these states are unreachable: " + stateDiff.join(","));
+    return false;
+  }
+  const targetDiff = difference(targetStates, states);
+  if (targetDiff.length > 0) {
+    reportError("these target states do not exist in the graph: " + targetDiff.join(","));
+    return false;
+  }
+  return true;
 };
 
 

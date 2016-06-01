@@ -45,18 +45,18 @@ describe("swk-fsm", function() {
 
   it("will throw if the initial state is not available in the state graph", () => {
     expect(() => {
-      const machine = fsm({states: {foo: "bar", bar: "baz"}, initial: "baz"});
+      const machine = fsm({states: {foo: "bar", bar: "foo"}, initial: "baz"});
     }).to.throw("initial state cannot be found in state graph");
   });
 
   it("will throw if there are less than 2 states in the state graph", () => {
     expect(() => {
       const machine = fsm({states: {foo: "bar"}, initial: "foo"});
-    }).to.throw("state graph is invalid");
+    }).to.throw("there is only one state in the state graph");
   });
 
   it("will return a state machine if the arguments are valid", () => {
-    const machine = fsm({states: {foo: "bar", bar: "baz"}, initial: "foo"});
+    const machine = fsm({states: {foo: "bar", bar: "baz", baz: "baz"}, initial: "foo"});
     expect(machine).to.be.an("object");
   });
 
