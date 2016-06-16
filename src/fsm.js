@@ -2,6 +2,7 @@ import {validateTargetState, validateConstruction, validateSubscription} from ".
 import {isArray, isFunction, isNumber, isObject, isString} from "./types";
 import {contains, filter} from "./fn";
 
+const INVALID_CALLBACK_ERROR = "Invalid callback supplied";
 
 /**
 * @param {string} targetState
@@ -27,6 +28,10 @@ function handleTransition(targetState, currentState, stateHandler, stateGraph, a
   return currentState;
 };
 
+function isTerminated(key, target) {
+  return key === target;
+}
+
 /**
 * @param {object} stateGraph
 * @param {string} initialState
@@ -47,6 +52,9 @@ export default function(spec) {
       const stateHandler = states[currentState];
       const startState = currentState;
       validateTargetState(targetState, stateKeys);
+      if (isTerminated(currentState, states[currentState])) {
+        return false;
+      }
       nextState = handleTransition(targetState, startState, stateHandler, states, args);
       if (startState !== nextState) {
         subscriptions.exit[startState].forEach((subscriber) => {
@@ -59,6 +67,11 @@ export default function(spec) {
           subscriber(startState, nextState, args);
         });
         currentState = nextState;
+        if (isTerminated(currentState, states[currentState])) {
+          subscriptions.terminate.forEach((subscriber) => {
+            subscriber(startState, currentState, args);
+          });
+        }
       } else {
         subscriptions.fail.forEach((subscriber) => {
           subscriber(startState, args);
@@ -110,7 +123,7 @@ export default function(spec) {
      */
     onChange(callback) {
       if(!isFunction(callback)) {
-        throw new Error("invalid callback supplied");
+        throw new Error(INVALID_CALLBACK_ERROR);
       }
       subscriptions.change.push(callback);
     },
@@ -129,7 +142,7 @@ export default function(spec) {
      */
     onFail(callback) {
       if(!isFunction(callback)) {
-        throw new Error("invalid callback supplied");
+        throw new Error(INVALID_CALLBACK_ERROR);
       }
       subscriptions.fail.push(callback);
     },
@@ -141,6 +154,13 @@ export default function(spec) {
       subscriptions.fail = filter((subscriber) => {
         return subscriber !== callback;
       }, subscriptions.fail);
+    },
+
+    onTerminate(callback) {
+      if (!isFunction(callback)) {
+        throw new Error(INVALID_CALLBACK_ERROR);
+      }
+      subscriptions.terminate.push(callback);
     },
 
     getState() {
@@ -165,7 +185,8 @@ function _compileSubscriptionKeys(stateGraph) {
     enter: {},
     exit: {},
     fail: [],
-    change: []
+    change: [],
+    terminate: []
   };
   Object.keys(stateGraph).forEach((key) => {
     subscriptionKeys.enter[key] = [];

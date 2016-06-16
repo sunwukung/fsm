@@ -6,10 +6,18 @@ const simpleStateGraph = {
   states: {
     foo: "bar",
     bar: "baz",
-    baz: "foo"
+    baz: "foo",
+    tom: ["dick", "harry"],
+    dick: ["tom", "harry"],
+    harry: ["tom", "dick"]
   },
   actions: {
-    next: {from: "foo", to: "bar"}
+    single: [
+      {from: "foo", to: "bar"},
+      {from: "bar", to: "baz"},
+      {from: "baz", to: "foo"},
+    ],
+
   },
   initial: "foo"
 };

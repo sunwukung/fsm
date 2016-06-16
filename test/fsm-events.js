@@ -2,13 +2,16 @@ import {expect} from "chai";
 import fsm from "../src/fsm";
 import sinon from "sinon";
 
+const INVALID_CALLBACK_ERROR = "Invalid callback supplied";
+
 const simpleStateGraph = {
   states: {
-    foo: "bar",
+    foo: ["bar", "terminal"],
     bar: "baz",
-    baz: "foo"
+    baz: "foo",
+    terminal: "terminal",
   },
-  initial: "foo"
+  initial: "foo" // ? should possibly allow terminal states to be specified by name
 };
 
 describe("event hooks", () => {
@@ -164,7 +167,7 @@ describe("event hooks", () => {
       [null, false, undefined, 123, [], {}].forEach((badArg) => {
         expect(() => {
           machine.onChange(badArg);
-        }).to.throw("invalid callback supplied");
+        }).to.throw(INVALID_CALLBACK_ERROR);
       });
     });
 
@@ -202,6 +205,26 @@ describe("event hooks", () => {
 
   });
 
+  describe("onTerminate", () =>  {
+    it("is a function", () =>  {
+      expect(machine.onTerminate).to.be.a("function");
+    });
+    it("will throw if the callback is not a function", () =>  {
+      [null, false, undefined, 123, [], {}].forEach((badArg) => {
+        expect(() => {
+          machine.onTerminate(badArg);
+        }).to.throw(INVALID_CALLBACK_ERROR);
+      });
+    });
+    it("will invoke the callback if the machine enters a terminal state", () =>  {
+      const spy = sinon.spy();
+      machine.onTerminate(spy);
+      machine.transition("terminal");
+      expect(spy.called).to.equal(true);
+    });
+  });
+
+
   describe("onFail", () =>  {
 
     it("is a function", () => {
@@ -212,7 +235,7 @@ describe("event hooks", () => {
       [null, false, undefined, 123, [], {}].forEach((badArg) => {
         expect(() => {
           machine.onFail(badArg);
-        }).to.throw("invalid callback supplied");
+        }).to.throw(INVALID_CALLBACK_ERROR);
       });
     });
 
@@ -221,6 +244,14 @@ describe("event hooks", () => {
       machine.onFail(spy);
       machine.transition("baz");
       expect(spy.called).to.equal(true);
+    });
+
+    it("will not invoke onFail if the machine is already in a terminal state", () =>  {
+      const spy = sinon.spy();
+      machine.onFail(spy);
+      machine.transition("terminal");
+      machine.transition("terminal");
+      expect(spy.called).to.equal(false);
     });
   });
 
@@ -241,20 +272,6 @@ describe("event hooks", () => {
       expect(spy.called).to.equal(false);
     });
 
-  });
-
-  describe("trigger", () => {
-    it("is a function", () => {
-      expect(machine.trigger).to.be.a("function");
-    });
-
-    it("will throw if the first argument is not a string", () => {
-      [null, false, undefined, 123, [], {}, () => {}].forEach((badType) => {
-        expect(() => {
-          machine.trigger(badType);
-        }).to.throw("trigger requires string as first argument");
-      });
-    });
   });
 
 });

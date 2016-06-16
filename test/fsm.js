@@ -117,8 +117,6 @@ describe("methods", () => {
       });
 
       it("ignores the result if it is not a boolean", () =>  {
-        // this test will be more interesting if we can trigger the
-        // error reporter from here
         machine.transition("baz");
         machine.transition("bar");
         expect(machine.getState()).to.equal("baz");
