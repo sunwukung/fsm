@@ -59,37 +59,71 @@ export function validateConstruction(stateGraph) {
   const actions = stateGraph.actions;
 
   if (states === undefined) {
-    reportError("'states' were not defined");
+    return reportError("'states' were not defined");
   }
 
   if (initialState === undefined) {
-    reportError("'initial' was not defined");
+    return reportError("'initial' was not defined");
   }
 
   if (!isObject(states)) {
-    reportError("'states' is not an object");
+    return reportError("'states' is not an object");
   }
 
   if (!isString(initialState)) {
-    reportError("'initial' is not a string");
+    return reportError("'initial' is not a string");
   }
 
   if (!isValidInitialState(states, initialState)) {
-    reportError("initial state cannot be found in state graph");
+    return reportError("initial state cannot be found in state graph");
   }
 
   if (!isValidStateGraph(states, initialState)) {
-    reportError("state graph is invalid");
+    return reportError("state graph is invalid");
   }
 
   validateActions(actions, states);
 
 };
 
+function _validateTransition(transition) {
+  if (!isObject(transition)) {
+    return reportError("transitions defined in actions should be an object");
+  }
+  if (transition.from === undefined) {
+    return reportError("transitions defined in actions should contain a 'from' property");
+  }
+  if (!isString(transition.from) && !isArray(transition.from)) {
+    return reportError("from properties should be a string or an array");
+  }
+
+  if (transition.to === undefined) {
+    return reportError("transitions defined in actions should contain a 'to' property");
+  }
+
+  if (!isString(transition.to)) {
+    return reportError("to properties should be a string");
+  }
+
+  return true;
+}
+
+function _validateAction(action) {
+  if (!isArray(action)) {
+    return reportError("'actions' should contain arrays");
+  }
+  action.forEach(_validateTransition);
+}
+
 export function validateActions(actions, states) {
+  let action;
+
   if (actions !== undefined) {
     if (!isObject(actions)) {
-      reportError("'actions' should be an object (if defined)");
+      return reportError("'actions' should be an object (if defined)");
+    }
+    for (action in actions) {
+      _validateAction(actions[action]);
     }
     const actionKeys = collectActionKeys(actions);
     const stateKeys = Object.keys(states);

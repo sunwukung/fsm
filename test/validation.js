@@ -92,13 +92,75 @@ describe("validateActions", () =>  {
     expect(validateActions).to.be.a.function;
   });
   it("throws if 'actions' are not an object", () =>  {
-    const badActions = [null, true, "string", [], () => {}];
-    badActions.forEach((badAction) => {
+    const badActionSpecs = [null, true, "string", [], () => {}];
+    badActionSpecs.forEach((badActionSpec) => {
       expect(() => {
-        validateActions(badAction, complexStateGraph.states);
+        validateActions(badActionSpec, complexStateGraph.states);
       }).to.throw("'actions' should be an object (if defined)");
     });
   });
+
+  it("throws if the properties defined in the actions object are not arrays", () =>  {
+    const badActions = [null, true, "string", {}, () => {}];
+    badActions.forEach((badArg) => {
+      expect(() => {
+        validateActions({foo: badArg}, complexStateGraph.states);
+      }).to.throw("'actions' should contain arrays");
+    });
+  });
+
+  it("throws if the actions arrays do not contain objects", () =>  {
+    const badTransitions = [null, undefined, true, 1, "foo", [], () => {}];
+    badTransitions.forEach((badTransition) => {
+      expect(() => {
+        validateActions({foo: [badTransition]}, complexStateGraph.states);
+      }).to.throw("transitions defined in actions should be an object");
+    });
+  });
+
+  it("throws if the transition objects do not contain a 'from' property", () =>  {
+    expect(() => {
+      validateActions({foo: [
+        {notFrom: "no from property in this object"}
+      ]}, complexStateGraph.states);
+    }).to.throw("transitions defined in actions should contain a 'from' property");
+  });
+
+  it("throws if the from property is not a string or an array", () =>  {
+    const badTransitions = [
+      null, true, 123, {}, () => {}
+    ];
+    badTransitions.forEach((badTransition) => {
+      expect(() => {
+        validateActions(
+          {foo: [{from: badTransition}]},
+          complexStateGraph.states
+        );
+      }).to.throw("from properties should be a string or an array");
+    });
+  });
+
+  it("throws if the transition objects do not contain a 'to' property", () =>  {
+    expect(() => {
+      validateActions(
+        {foo: [{from: "bar", notTo: "no to property in objects"}]},
+        complexStateGraph.states
+      );
+    }).to.throw("transitions defined in actions should contain a 'to' property");
+  });
+
+  it("throws if the to property is not a string", () =>  {
+    const badToProperties = [null, true, 1, [], {}, () => {}];
+    badToProperties.forEach((badProperty) => {
+      expect(() => {
+        validateActions(
+          {foo: [{from: "foo", to: badProperty}]},
+          complexStateGraph.states
+        );
+      }).to.throw("to properties should be a string");
+    });
+  });
+
 });
 
 describe("collectActionKeys", () =>  {

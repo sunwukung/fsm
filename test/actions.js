@@ -1,15 +1,19 @@
 import {expect} from "chai";
 import fsm from "../src/fsm";
 import sinon from "sinon";
+import {merge} from "ramda";
+
+// first, assume arrays by default
+// then allow for single objects?
 
 const simpleStateGraph = {
   states: {
     foo: "bar",
     bar: "baz",
-    baz: "foo",
-    tom: ["dick", "harry"],
-    dick: ["tom", "harry"],
-    harry: ["tom", "dick"]
+    baz: ["foo", "tom", "dick", "harry"],
+    tom: "foo",
+    dick: "foo",
+    harry: "foo"
   },
   actions: {
     single: [
@@ -17,12 +21,17 @@ const simpleStateGraph = {
       {from: "bar", to: "baz"},
       {from: "baz", to: "foo"},
     ],
-
+    plural: [
+      {from: ["tom", "dick", "harry"], to: "foo"},
+    ],
+    predicate: [
+      {from: "fighting", to: (state) => {return state === "win" ? "victory" : "defeat";}}
+    ]
   },
   initial: "foo"
 };
 
-describe("actions", () => {
+describe.skip("actions", () => {
 
   let machine = {};
 
