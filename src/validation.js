@@ -101,8 +101,8 @@ function _validateTransition(transition) {
     return reportError("transitions defined in actions should contain a 'to' property");
   }
 
-  if (!isString(transition.to)) {
-    return reportError("to properties should be a string");
+  if (!isString(transition.to) && !isFunction(transition.to)) {
+    return reportError("to properties should be a string or a function");
   }
 
   return true;

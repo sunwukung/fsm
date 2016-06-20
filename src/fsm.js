@@ -39,6 +39,7 @@ function isTerminated(key, target) {
 export default function(spec) {
   validateConstruction(spec);
   const states = spec.states;
+  const actions = spec.actions;
   const stateKeys = Object.keys(states);
   const subscriptions = _compileSubscriptionKeys(states);
   let currentState = spec.initial;
@@ -164,13 +165,36 @@ export default function(spec) {
     },
 
     getState() {
-      return nextState;
+      return currentState;
     },
 
     trigger(action, ...args) {
       if(!isString(action)) {
         throw new Error("trigger requires string as first argument");
       }
+      const transitionSpec = actions[action];
+      let selectedTransition = undefined;
+      transitionSpec.forEach((transition) => {
+        if (isArray(transition.from)) {
+          transition.from.forEach((from) => {
+            // require validation of array elments
+            if (isString(from) && from === currentState) {
+              selectedTransition = transition;
+            }
+          });
+        }
+        if (isString(transition.from) && transition.from === currentState) {
+          selectedTransition = transition;
+        }
+      });
+      if (selectedTransition) {
+        // if string
+        // if function, evaluate
+        if (isString(selectedTransition.to)) {
+          fsm.transition(selectedTransition.to, args);
+        }
+      }
+
     }
   };
 

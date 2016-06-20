@@ -31,7 +31,7 @@ const simpleStateGraph = {
   initial: "foo"
 };
 
-describe.skip("actions", () => {
+describe.only("actions", () => {
 
   let machine = {};
 
@@ -51,6 +51,15 @@ describe.skip("actions", () => {
           machine.trigger(badType);
         }).to.throw("trigger requires string as first argument");
       });
+    });
+
+    it("will attempt to transition the machine using a simple string:string mapping", () =>  {
+      machine.trigger("single");
+      expect(machine.getState()).to.equal("foo");
+      machine.trigger("single");
+      expect(machine.getState()).to.equal("bar");
+      machine.trigger("single");
+      expect(machine.getState()).to.equal("baz");
     });
   });
 
