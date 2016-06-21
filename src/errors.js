@@ -2,9 +2,7 @@ const errors = {
   actions: {
     validation: {}
   },
-  transitions: {
-
-  },
+  transitions: {},
   states: {}
 };
 

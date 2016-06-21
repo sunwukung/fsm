@@ -7,6 +7,7 @@ import {merge} from "ramda";
 // then allow for single objects?
 
 const simpleStateGraph = {
+  initial: "foo",
   states: {
     foo: "bar",
     bar: "baz",
@@ -27,11 +28,10 @@ const simpleStateGraph = {
     predicate: [
       {from: "fighting", to: (state) => {return state === "win" ? "victory" : "defeat";}}
     ]
-  },
-  initial: "foo"
+  }
 };
 
-describe.only("actions", () => {
+describe("actions", () => {
 
   let machine = {};
 
@@ -54,7 +54,6 @@ describe.only("actions", () => {
     });
 
     it("will attempt to transition the machine using a simple string:string mapping", () =>  {
-      machine.trigger("single");
       expect(machine.getState()).to.equal("foo");
       machine.trigger("single");
       expect(machine.getState()).to.equal("bar");
