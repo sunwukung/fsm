@@ -5,6 +5,8 @@ import {merge} from "ramda";
 const sandbox = sinon.sandbox.create()
 // first, assume arrays by default
 // then allow for single objects?
+const dynamicStub = sandbox.stub();
+const pluralStub = sandbox.stub();
 
 const simpleStateGraph = {
   initial: "foo",
@@ -26,32 +28,25 @@ const simpleStateGraph = {
       {from: ["tom", "dick", "harry"], to: "foo"},
     ],
     dynamic: [
-      {from: "baz", to: (currentState, val) => {
-        return val === 1 ? "tom" : "dick";
-      }}
+      {from: "baz", to: dynamicStub}
     ],
     pluralDynamic: [
-      {from: ["foo", "tom"], to: (currentState) => {return currentState === "tom" ? "foo" : "bar";}}
-    ]
+      {from: ["foo", "tom"], to: pluralStub}
+    ],
   }
 };
 
-describe.only("actions", () => {
+dynamicStub.withArgs("baz", 1).returns("tom");
+pluralStub.withArgs("tom").returns("foo");
+
+describe("actions", () => {
 
   let machine = {};
-  let singleSpyA = sandbox.spy(simpleStateGraph, actions.single[0].to);
-  let singleSpyB = sandbox.spy(simpleStateGraph, actions.single[1].to);
-  let singleSpyB = sandbox.spy(simpleStateGraph, actions.single[2].to);
-  let pluralSpy = sandbox.spy(simpleStateGraph, actions.plural[0].to);
-  let dynamicSpy = sandbox.spy(simpleStateGraph, actions.dynamic[0].to);
-  let pluralDynamicSpy = sandbox.spy(simpleStateGraph, actions.pluralDynamic[0].to);
 
   beforeEach(() => {
+    sandbox.reset();
     machine = fsm(simpleStateGraph);
   });
-  afterEach(() => {
-    sandbox.reset();
-  })
 
   describe("trigger", () => {
 
@@ -93,7 +88,9 @@ describe.only("actions", () => {
       expect(machine.getState()).to.equal("baz");
       machine.trigger("dynamic", 1);
       expect(machine.getState()).to.equal("tom")
+      expect(dynamicStub.calledWithMatch("baz", 1)).to.equal(true);
     });
+
 
     it("will attempt to transition using an array:function mapping", () =>  {
       machine.transition("bar");
@@ -104,6 +101,7 @@ describe.only("actions", () => {
       expect(machine.getState()).to.equal("tom");
       machine.trigger("pluralDynamic");
       expect(machine.getState()).to.equal("foo");
+      expect(pluralStub.calledWith("tom")).to.equal(true);
     })
   });
 
