@@ -188,11 +188,15 @@ export default function(spec) {
         }
       });
       if (selectedTransition) {
-        // if string
-        // if function, evaluate
+        let targetState = currentState
         if (isString(selectedTransition.to)) {
-          fsm.transition(selectedTransition.to, args);
+          targetState = selectedTransition.to;
         }
+        if (isFunction(selectedTransition.to)) {
+          targetState = selectedTransition.to.apply(null, [currentState].concat(args));
+        }
+        const payload = _buildPayload(targetState, args)
+        fsm.transition.apply(null, payload);
       }
 
     }
@@ -201,6 +205,9 @@ export default function(spec) {
   return fsm;
 }
 
+function _buildPayload(targetState, args) {
+  return [targetState].concat(args);
+}
 /**
 * @param {object} stateGraph
 */
