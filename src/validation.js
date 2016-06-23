@@ -42,10 +42,13 @@ function isValidSubscription(stateKey, stateGraph) {
 export function validateTargetState(targetState, stateKeys) {
   if (!isString(targetState)) {
     reportError("state key must be a string");
+    return false;
   };
   if (!contains(targetState, stateKeys)) {
     reportError("state key could not be found in the state graph");
+    return false;
   }
+  return true;
 };
 
 export function validateConstruction(stateGraph) {

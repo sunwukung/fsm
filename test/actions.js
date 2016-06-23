@@ -2,7 +2,7 @@ import {expect} from "chai";
 import fsm from "../src/fsm";
 import sinon from "sinon";
 import {merge} from "ramda";
-const sandbox = sinon.sandbox.create()
+const sandbox = sinon.sandbox.create();
 // first, assume arrays by default
 // then allow for single objects?
 const dynamicStub = sandbox.stub();
@@ -33,6 +33,9 @@ const simpleStateGraph = {
     pluralDynamic: [
       {from: ["foo", "tom"], to: pluralStub}
     ],
+    dynamicInvalid: [
+      {from: "foo", to: () => "invalid"}
+    ]
   }
 };
 
@@ -78,7 +81,7 @@ describe("actions", () => {
       machine.transition("tom");
       expect(machine.getState()).to.equal("tom");
       machine.trigger("plural");
-      expect(machine.getState()).to.equal("foo")
+      expect(machine.getState()).to.equal("foo");
     });
 
     it("will attempt to transition using a string:function mapping", () =>  {
@@ -87,7 +90,7 @@ describe("actions", () => {
       machine.transition("baz");
       expect(machine.getState()).to.equal("baz");
       machine.trigger("dynamic", 1);
-      expect(machine.getState()).to.equal("tom")
+      expect(machine.getState()).to.equal("tom");
       expect(dynamicStub.calledWithMatch("baz", 1)).to.equal(true);
     });
 
@@ -102,7 +105,14 @@ describe("actions", () => {
       machine.trigger("pluralDynamic");
       expect(machine.getState()).to.equal("foo");
       expect(pluralStub.calledWith("tom")).to.equal(true);
-    })
+    });
+
+    it("will report an error if the action returns an invalid state", () =>  {
+      expect(() => {
+        machine.trigger("dynamicInvalid");
+      }).to.throw("state key could not be found in the state graph");
+    });
+
   });
 
 });

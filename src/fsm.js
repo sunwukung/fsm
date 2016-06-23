@@ -1,6 +1,6 @@
 import {validateTargetState, validateConstruction, validateSubscription} from "./validation";
 import {isArray, isFunction, isNumber, isObject, isString} from "./types";
-import {contains, filter} from "./fn";
+import {contains, filter} from "ramda";
 
 const INVALID_CALLBACK_ERROR = "Invalid callback supplied";
 
@@ -188,14 +188,17 @@ export default function(spec) {
         }
       });
       if (selectedTransition) {
-        let targetState = currentState
+        let targetState = currentState;
         if (isString(selectedTransition.to)) {
           targetState = selectedTransition.to;
         }
         if (isFunction(selectedTransition.to)) {
           targetState = selectedTransition.to.apply(null, [currentState].concat(args));
         }
-        const payload = _buildPayload(targetState, args)
+        if (!validateTargetState(targetState, Object.keys(states))) {
+          return;
+        }
+        const payload = _buildPayload(targetState, args);
         fsm.transition.apply(null, payload);
       }
 
