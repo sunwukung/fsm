@@ -208,9 +208,14 @@ export default function(spec) {
   return fsm;
 }
 
+/**
+* @param {string} targetState
+* @param {array} args
+*/
 function _buildPayload(targetState, args) {
   return [targetState].concat(args);
 }
+
 /**
 * @param {object} stateGraph
 */
@@ -230,10 +235,22 @@ function _compileSubscriptionKeys(stateGraph) {
 }
 
 
+/**
+* @param {string} stateHandler
+* @param {string} targetState
+* @param {string} currentState
+*/
 function _useStringHandler(stateHandler, targetState, currentState) {
   return stateHandler === targetState ? targetState : currentState;
 }
 
+/**
+* @param {function} stateHandler
+* @param {string} targetState
+* @param {string} currentState
+* @param {object} stateGraph
+* @param {array} args
+*/
 function _useFunctionHandler(stateHandler, targetState, currentState, stateGraph, args) {
   const result = stateHandler.apply(stateGraph, args);
   if (result === true) {
@@ -245,6 +262,11 @@ function _useFunctionHandler(stateHandler, targetState, currentState, stateGraph
   return currentState;
 }
 
+/**
+* @param {array} stateHandler
+* @param {string} targetState
+* @param {string} currentState
+*/
 function _useArrayHandler(stateHandler, targetState, currentState) {
   let found = false;
   stateHandler.forEach((availableState) => {
@@ -255,6 +277,13 @@ function _useArrayHandler(stateHandler, targetState, currentState) {
   return found ? targetState : currentState;
 }
 
+/**
+* @param {object} stateHandler
+* @param {string} targetState
+* @param {string} currentState
+* @param {object} stateGraph
+* @param {array} args
+*/
 function _useObjectHandler(stateHandler, targetState, currentState, stateGraph, args) {
   if (stateHandler[targetState] === true) {
     return stateHandler[targetState] ? targetState : currentState;
