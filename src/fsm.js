@@ -1,6 +1,6 @@
 import {validateTargetState, validateConstruction, validateSubscription} from "./validation";
 import {isArray, isFunction, isNumber, isObject, isString} from "./types";
-import {contains, filter} from "ramda";
+import {clone, contains, filter} from "ramda";
 
 const INVALID_CALLBACK_ERROR = "Invalid callback supplied";
 
@@ -36,7 +36,8 @@ function isTerminated(key, target) {
 * @param {object} stateGraph
 * @param {string} initialState
 */
-export default function(spec) {
+export default function(originalSpec) {
+  const spec = clone(originalSpec);
   validateConstruction(spec);
   const states = spec.states;
   const actions = spec.actions;
@@ -195,7 +196,7 @@ export default function(spec) {
         if (isFunction(selectedTransition.to)) {
           targetState = selectedTransition.to.apply(null, [currentState].concat(args));
         }
-        if (!validateTargetState(targetState, Object.keys(states))) {
+        if (!validateTargetState(targetState, stateKeys)) {
           return;
         }
         const payload = _buildPayload(targetState, args);
