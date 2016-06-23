@@ -178,7 +178,6 @@ export default function(originalSpec) {
       transitionSpec.forEach((transition) => {
         if (isArray(transition.from)) {
           transition.from.forEach((from) => {
-            // require validation of array elments
             if (isString(from) && from === currentState) {
               selectedTransition = transition;
             }

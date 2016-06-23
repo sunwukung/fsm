@@ -1,4 +1,4 @@
-import {contains, difference} from "ramda";
+import {contains, curry, difference} from "ramda";
 import {
   isObject,
   isBoolean,
@@ -85,11 +85,11 @@ export function validateConstruction(stateGraph) {
     return reportError("state graph is invalid");
   }
 
-  validateActions(actions, states);
+  validateActions(actions, Object.keys(states));
 
 };
 
-function _validateTransition(transition) {
+const _validateTransition = curry((stateKeys, transition) => {
   if (!isObject(transition)) {
     return reportError("transitions defined in actions should be an object");
   }
@@ -98,6 +98,18 @@ function _validateTransition(transition) {
   }
   if (!isString(transition.from) && !isArray(transition.from)) {
     return reportError("from properties should be a string or an array");
+  }
+
+  if (isArray(transition.from)) {
+    transition.from.forEach((fromState) => {
+      console.log(fromState, stateKeys);
+      if (!isString(fromState)) {
+        return reportError("elements in from arrays must be strings");
+      }
+      if (!contains(fromState, stateKeys)) {
+        return reportError("from properties should be valid states");
+      }
+    });
   }
 
   if (transition.to === undefined) {
@@ -109,16 +121,16 @@ function _validateTransition(transition) {
   }
 
   return true;
-}
+});
 
-function _validateAction(action) {
+function _validateAction(action, stateKeys) {
   if (!isArray(action)) {
     return reportError("'actions' should contain arrays");
   }
-  action.forEach(_validateTransition);
+  action.forEach(_validateTransition(stateKeys));
 }
 
-export function validateActions(actions, states) {
+export function validateActions(actions, stateKeys) {
   let action;
 
   if (actions !== undefined) {
@@ -126,26 +138,9 @@ export function validateActions(actions, states) {
       return reportError("'actions' should be an object (if defined)");
     }
     for (action in actions) {
-      _validateAction(actions[action]);
-    }
-    const actionKeys = collectActionKeys(actions);
-    const stateKeys = Object.keys(states);
-  }
-};
-
-export function collectActionKeys(actions) {
-  const keys = [];
-  for (let action in actions) {
-    if (actions.hasOwnProperty(action)) {
-      const actionKeys = [];
-      // parse arrays
-      // parse strings
-      // add to keys
-      // also collect to targets
-      // de-dupe the array
+      _validateAction(actions[action], stateKeys);
     }
   }
-  return [];
 };
 
 export function validateSubscription(stateKey, callback, stateGraph) {

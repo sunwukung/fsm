@@ -113,6 +113,25 @@ describe("actions", () => {
       }).to.throw("state key could not be found in the state graph");
     });
 
+    it("will return an error if the from properties in an array are not strings", () =>  {
+      const stateGraph = {
+        initial: "foo",
+        states: {
+          foo: "bar",
+          bar: "baz",
+          baz: "foo",
+        },
+        actions: {
+          invalid: [
+            {from: [123], to: "bar"}
+          ]
+        }
+      };
+      expect(() => {
+        const machine = fsm(stateGraph);
+      }).to.throw("elements in from arrays must be strings");
+    });
+
   });
 
 });

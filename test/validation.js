@@ -163,13 +163,5 @@ describe("validation", function() {
 
   });
 
-  describe("collectActionKeys", () =>  {
-    it("is a function", () =>  {
-      expect(collectActionKeys).to.be.a.function;
-    });
-    it("returns an array", () => {
-      expect(collectActionKeys(complexStateGraph.actions)).to.be.an.array;
-    });
-  });
 
-})
+});
