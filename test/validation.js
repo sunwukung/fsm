@@ -22,6 +22,12 @@ const complexStateGraph = {
   }
 };
 
+const options = {
+  errorReporter: (msg) => {
+    throw new Error(msg);
+  }
+};
+
 describe("validation", function() {
   describe("collectTargetStates", () =>  {
 
@@ -61,13 +67,13 @@ describe("validation", function() {
 
     it("rejects state graphs with less than two keys", () =>  {
       expect(() => {
-        isValidStateGraph({one: "not valid"});
+        isValidStateGraph(options.errorReporter, {one: "not valid"});
       }).to.throw("there is only one state in the state graph");
     });
 
     it("rejects state graphs with unreachable states", () => {
       expect(() => {
-        isValidStateGraph({
+        isValidStateGraph(options.errorReporter, {
           one: "three",
           two: "one",
           three: "one"
@@ -77,10 +83,12 @@ describe("validation", function() {
 
     it("rejects state graphs with invalid target states", () =>  {
       expect(() => {
-        isValidStateGraph({
-          one: "two",
-          two: ["one", "three"],
-          three: "four"
+        isValidStateGraph(
+          options.errorReporter,
+          {
+            one: "two",
+            two: ["one", "three"],
+            three: "four"
         });
       }).to.throw("these target states do not exist in the graph: four");
     });
@@ -95,7 +103,10 @@ describe("validation", function() {
       const badActionSpecs = [null, true, "string", [], () => {}];
       badActionSpecs.forEach((badActionSpec) => {
         expect(() => {
-          validateActions(badActionSpec, complexStateGraph.states);
+          validateActions(
+            options.errorReporter,
+            badActionSpec,
+            complexStateGraph.states);
         }).to.throw("'actions' should be an object (if defined)");
       });
     });
@@ -104,7 +115,10 @@ describe("validation", function() {
       const badActions = [null, true, "string", {}, () => {}];
       badActions.forEach((badArg) => {
         expect(() => {
-          validateActions({foo: badArg}, complexStateGraph.states);
+          validateActions(
+            options.errorReporter,
+            {foo: badArg},
+            complexStateGraph.states);
         }).to.throw("'actions' should contain arrays");
       });
     });
@@ -113,16 +127,24 @@ describe("validation", function() {
       const badTransitions = [null, undefined, true, 1, "foo", [], () => {}];
       badTransitions.forEach((badTransition) => {
         expect(() => {
-          validateActions({foo: [badTransition]}, complexStateGraph.states);
+          validateActions(
+            options.errorReporter,
+            {foo: [badTransition]},
+            complexStateGraph.states
+          );
         }).to.throw("transitions defined in actions should be an object");
       });
     });
 
     it("throws if the transition objects do not contain a 'from' property", () =>  {
       expect(() => {
-        validateActions({foo: [
-          {notFrom: "no from property in this object"}
-        ]}, complexStateGraph.states);
+        validateActions(
+          options.errorReporter,
+          {foo: [
+            {notFrom: "no from property in this object"}
+          ]},
+          complexStateGraph.states
+        );
       }).to.throw("transitions defined in actions should contain a 'from' property");
     });
 
@@ -133,6 +155,7 @@ describe("validation", function() {
       badTransitions.forEach((badTransition) => {
         expect(() => {
           validateActions(
+            options.errorReporter,
             {foo: [{from: badTransition}]},
             complexStateGraph.states
           );
@@ -143,6 +166,7 @@ describe("validation", function() {
     it("throws if the transition objects do not contain a 'to' property", () =>  {
       expect(() => {
         validateActions(
+          options.errorReporter,
           {foo: [{from: "bar", notTo: "no to property in objects"}]},
           complexStateGraph.states
         );
@@ -154,6 +178,7 @@ describe("validation", function() {
       badToProperties.forEach((badProperty) => {
         expect(() => {
           validateActions(
+            options.errorReporter,
             {foo: [{from: "foo", to: badProperty}]},
             complexStateGraph.states
           );

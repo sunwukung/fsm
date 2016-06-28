@@ -8,14 +8,6 @@ import {
   isFunction
 } from "./types";
 
-let errorReporter = function(message) {
-  throw new Error(message);
-};
-
-function reportError(message) {
-  errorReporter(message);
-};
-
 function isValidInitialState(stateGraph, initialState) {
   const stateKeys = Object.keys(stateGraph);
   let validInitialState = false;
@@ -39,7 +31,7 @@ function isValidSubscription(stateKey, stateGraph) {
 };
 
 
-export function validateTargetState(targetState, stateKeys) {
+export function validateTargetState(reportError, targetState, stateKeys) {
   if (!isString(targetState)) {
     reportError("state key must be a string");
     return false;
@@ -51,7 +43,7 @@ export function validateTargetState(targetState, stateKeys) {
   return true;
 };
 
-export function validateConstruction(stateGraph) {
+export function validateConstruction(reportError, stateGraph) {
 
   if (!isObject(stateGraph)) {
     reportError("state graph is not an object");
@@ -81,15 +73,15 @@ export function validateConstruction(stateGraph) {
     return reportError("initial state cannot be found in state graph");
   }
 
-  if (!isValidStateGraph(states, initialState)) {
+  if (!isValidStateGraph(reportError, states, initialState)) {
     return reportError("state graph is invalid");
   }
 
-  validateActions(actions, Object.keys(states));
+  validateActions(reportError, actions, Object.keys(states));
 
 };
 
-const _validateTransition = curry((stateKeys, transition) => {
+const _validateTransition = curry((reportError, stateKeys, transition) => {
   if (!isObject(transition)) {
     return reportError("transitions defined in actions should be an object");
   }
@@ -102,7 +94,6 @@ const _validateTransition = curry((stateKeys, transition) => {
 
   if (isArray(transition.from)) {
     transition.from.forEach((fromState) => {
-      console.log(fromState, stateKeys);
       if (!isString(fromState)) {
         return reportError("elements in from arrays must be strings");
       }
@@ -123,14 +114,14 @@ const _validateTransition = curry((stateKeys, transition) => {
   return true;
 });
 
-function _validateAction(action, stateKeys) {
+function _validateAction(reportError, action, stateKeys) {
   if (!isArray(action)) {
     return reportError("'actions' should contain arrays");
   }
-  action.forEach(_validateTransition(stateKeys));
+  action.forEach(_validateTransition(reportError, stateKeys));
 }
 
-export function validateActions(actions, stateKeys) {
+export function validateActions(reportError, actions, stateKeys) {
   let action;
 
   if (actions !== undefined) {
@@ -138,12 +129,12 @@ export function validateActions(actions, stateKeys) {
       return reportError("'actions' should be an object (if defined)");
     }
     for (action in actions) {
-      _validateAction(actions[action], stateKeys);
+      _validateAction(reportError, actions[action], stateKeys);
     }
   }
 };
 
-export function validateSubscription(stateKey, callback, stateGraph) {
+export function validateSubscription(reportError, stateKey, callback, stateGraph) {
   if(!isString(stateKey)) {
     reportError("state key is not a string");
   }
@@ -155,7 +146,7 @@ export function validateSubscription(stateKey, callback, stateGraph) {
   }
 };
 
-export function isValidStateGraph(stateGraph, initialState) {
+export function isValidStateGraph(reportError, stateGraph, initialState) {
   const states = Object.keys(stateGraph);
   if (states.length <= 1) {
     reportError("there is only one state in the state graph");

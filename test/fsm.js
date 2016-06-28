@@ -29,6 +29,12 @@ const complexStateGraph = {
   },
 };
 
+const options = {
+  errorReporter: (msg) => {
+    throw new Error(msg);
+  }
+};
+
 describe("methods", () => {
 
   let machine = {};
@@ -36,7 +42,7 @@ describe("methods", () => {
   describe("transition", () => {
 
     beforeEach(() => {
-      machine = fsm(simpleStateGraph);
+      machine = fsm(simpleStateGraph, options);
     });
 
 
@@ -68,7 +74,7 @@ describe("methods", () => {
   describe("simple state handlers", () =>  {
 
     beforeEach(() => {
-      machine = fsm(complexStateGraph);
+      machine = fsm(complexStateGraph, options);
     });
 
     it("strings", () => {
@@ -88,7 +94,7 @@ describe("methods", () => {
 
     beforeEach(() => {
       spy = sinon.spy(complexStateGraph.states.baz, "foo");
-      machine = fsm(complexStateGraph);
+      machine = fsm(complexStateGraph, options);
     });
 
     afterEach(() => {
@@ -116,10 +122,11 @@ describe("methods", () => {
         expect(machine.getState()).to.equal("baz");
       });
 
-      it("ignores the result if it is not a boolean", () =>  {
+      it("throws if the result is not a boolean", () =>  {
         machine.transition("baz");
-        machine.transition("bar");
-        expect(machine.getState()).to.equal("baz");
+        expect(() => {
+          machine.transition("bar");
+        }).to.throw("predicate state handler did not return a boolean");
       });
 
     });
