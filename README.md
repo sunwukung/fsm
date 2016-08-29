@@ -2,52 +2,78 @@
 
 a finite state machine implementation written in Javascript
 
+
 ## Design Goals
 
 * Avoid no-ops on resulting state machine object
 * avoid generating event specific functions on object
 * prefer generic API
 
-## Tasks
 
-* support actions (i.e transition aliasing)
-* get state graph
-* get available states from current state
+### State Machine Factory
 
-## API
+The library exports a machine factory. Provide this with a state graph
+and it will generate a machine. The factory will validate the graph
+before it attempts to produce a machine. You can supply a custom error
+reporter in the options argument. The factory (and the machine it
+produces) will both use the provided error reporting function
+provided, but will throw exceptions otherwise.
 
-### FACTORY
 
-The library exports a machine factory. Provide this with an state graph and it will generate a machine
+### swk-fsm(graph, options) -> stateMachine
 
-var stateGraph = {
-    initial: "foo",
-    states: {
-        foo: "bar"; // single static, target state
-        bar: { // multiple target states
-            baz: "baz"
-            foo: () => ("foo")
+    const stateGraph = {
+        initial: "foo",
+        states: {
+            foo: "baz",
+            bar: ["foo", "baz"],
+            baz: {
+                foo: (val) => {
+                    return val === 1 ? "bar" : "baz";
+                },
+            }
         },
-    actions: {
-        next: {
-            foo: "bar"; // single static, target state
-            bar: ["foo", "baz"] // multiple target states
-            bar: { // multiple target states with validation
-                baz: () => (false)
-                foo: () => (true)
-                baz: "foo" // accepts mixed
-            },
+        actions: {
+            next: [
+                {from: "foo", to "bar"}
+            ]
         }
+    };
+
+    const errorReporter = (err) => {
+        console.log(err);
     }
-}
 
-NOTE: use actions for dynamic target generation, machine states must be deterministic
 
-### MACHINE
+### transition(targetState {String}, ...args)
 
-transition
-trigger
-onChange
-onEnter
-onExit
-onFail
+move the machine from it's current state to the target state, if
+available. The method is variadic, all additional arguments will be
+passed to the state handler
+
+
+### onEnter|Exit(state {String}, callback {Function})
+
+notify the callback when the machine enters/exits the specified state
+
+
+### offEnter|Exit(state {String}, callback {Function})
+
+remove the callback for enter/exit events for the specified state
+
+
+### onChange|Fail|Terminate(callback {Function})
+
+notify the callback when the machine performs anyone of the specified
+events.
+
+
+### offChange|Fail(callback {Function})
+
+remove the callback for the specified machine event. There is no
+corresponding ability to remove a termination event subscription, as
+the machine cannot exit a terminal state.
+
+
+
+
