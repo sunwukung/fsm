@@ -1,17 +1,3 @@
-# SWK-FSM
-
-a finite state machine implementation written in Javascript
-
-
-## Design Goals
-
-* Avoid no-ops on resulting state machine object
-* avoid generating event specific functions on object
-* prefer generic API
-
-
-### State Machine Factory
-
 The library exports a machine factory. Provide this with a state graph
 and it will generate a machine. The factory will validate the graph
 before it attempts to produce a machine. You can supply a custom error
@@ -20,7 +6,7 @@ produces) will both use the provided error reporting function
 provided, but will throw exceptions otherwise.
 
 
-### swk-fsm(graph, options) -> stateMachine
+### fsm(graph, options) -> stateMachine
 
     const stateGraph = {
         initial: "foo",
