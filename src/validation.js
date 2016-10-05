@@ -8,6 +8,10 @@ import {
   isFunction
 } from "./types";
 
+/**
+* @param {object} stateGraph
+* @param {string} initialState
+*/
 function isValidInitialState(stateGraph, initialState) {
   const stateKeys = Object.keys(stateGraph);
   let validInitialState = false;
@@ -17,8 +21,12 @@ function isValidInitialState(stateGraph, initialState) {
     }
   });
   return validInitialState;
-};
+}
 
+/**
+* @param {string} stateKey
+* @param {object} stateGraph
+*/
 function isValidSubscription(stateKey, stateGraph) {
   const stateKeys = Object.keys(stateGraph);
   let validStateKey = false;
@@ -28,9 +36,14 @@ function isValidSubscription(stateKey, stateGraph) {
     }
   });
   return validStateKey;
-};
+}
 
 
+/**
+* @param {function} reportError
+* @param {string} targetState
+* @param {array} stateKeys
+*/
 export function validateTargetState(reportError, targetState, stateKeys) {
   if (!isString(targetState)) {
     reportError("state key must be a string");
@@ -41,8 +54,12 @@ export function validateTargetState(reportError, targetState, stateKeys) {
     return false;
   }
   return true;
-};
+}
 
+/**
+* @param {function} reportError
+* @param {object} stateGraph
+*/
 export function validateConstruction(reportError, stateGraph) {
 
   if (!isObject(stateGraph)) {
@@ -79,8 +96,13 @@ export function validateConstruction(reportError, stateGraph) {
 
   validateActions(reportError, actions, Object.keys(states));
 
-};
+}
 
+/**
+* @param {function} reportError
+* @param {array} stateKeys
+* @param {object} transition
+*/
 const _validateTransition = curry((reportError, stateKeys, transition) => {
   if (!isObject(transition)) {
     return reportError("transitions defined in actions should be an object");
@@ -114,6 +136,11 @@ const _validateTransition = curry((reportError, stateKeys, transition) => {
   return true;
 });
 
+/**
+* @param {function} reportError
+* @param {array} action
+* @param {array} stateKeys
+*/
 function _validateAction(reportError, action, stateKeys) {
   if (!isArray(action)) {
     return reportError("'actions' should contain arrays");
@@ -121,6 +148,11 @@ function _validateAction(reportError, action, stateKeys) {
   action.forEach(_validateTransition(reportError, stateKeys));
 }
 
+/**
+* @param {function} reportError
+* @param {object} actions
+* @param {array} stateKeys
+*/
 export function validateActions(reportError, actions, stateKeys) {
   let action;
 
@@ -134,6 +166,12 @@ export function validateActions(reportError, actions, stateKeys) {
   }
 };
 
+/**
+* @param {function} stateKey
+* @param {string} stateKey
+* @param {function} callback
+* @param {object} stateGraph
+*/
 export function validateSubscription(reportError, stateKey, callback, stateGraph) {
   if(!isString(stateKey)) {
     reportError("state key is not a string");
@@ -144,8 +182,13 @@ export function validateSubscription(reportError, stateKey, callback, stateGraph
   if(!isFunction(callback)) {
     reportError("callback is not a function");
   }
-};
+}
 
+/**
+* @param {function} reportError
+* @param {object} stateGraph
+* @param {string} initialState
+*/
 export function isValidStateGraph(reportError, stateGraph, initialState) {
   const states = Object.keys(stateGraph);
   if (states.length <= 1) {
@@ -167,9 +210,12 @@ export function isValidStateGraph(reportError, stateGraph, initialState) {
     return false;
   }
   return true;
-};
+}
 
-
+/**
+* @param {array} newKeys
+* @param {array} keys
+*/
 function updateMultipleKeys(newKeys, keys) {
   newKeys.forEach((key) => {
     if (!contains(key, keys)) {
@@ -179,6 +225,9 @@ function updateMultipleKeys(newKeys, keys) {
   return keys;
 }
 
+/**
+* @param {object} stateGraph
+*/
 export function collectTargetStates(stateGraph) {
   let targetStates = [];
   for (let stateHandler in stateGraph) {
@@ -194,5 +243,5 @@ export function collectTargetStates(stateGraph) {
     }
   }
   return targetStates.sort();
-};
+}
 

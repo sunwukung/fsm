@@ -5,6 +5,7 @@ import {clone, contains, curry, filter} from "ramda";
 const INVALID_CALLBACK_ERROR = "Invalid callback supplied";
 
 /**
+* @param {function} reportError
 * @param {string} targetState
 * @param {string} currentState
 * @param {mixed} stateHandler
@@ -43,14 +44,14 @@ function _errorReporter(message) {
 
 /**
 * @param {object} stateGraph
-* @param {string} initialState
+* @param {object} options
 */
-export default function(originalSpec, options = {}) {
+export default function(stateGraph, options = {}) {
   const reportError = isFunction(options.errorReporter) ?
           options.errorReporter :
           _errorReporter;
   const handleTransition = _handleTransition(reportError);
-  const spec = clone(originalSpec);
+  const spec = clone(stateGraph);
   validateConstruction(reportError, spec);
   const states = spec.states;
   const actions = spec.actions;
@@ -184,6 +185,10 @@ export default function(originalSpec, options = {}) {
       return currentState;
     },
 
+    /**
+     * @param {string} action
+     * @param {array} args
+     */
     trigger(action, ...args) {
       if(!isString(action)) {
         return reportError("trigger requires string as first argument");
@@ -219,7 +224,6 @@ export default function(originalSpec, options = {}) {
 
     }
   };
-
   return fsm;
 }
 
@@ -260,6 +264,7 @@ function _useStringHandler(stateHandler, targetState, currentState) {
 }
 
 /**
+* @param {function} reportError
 * @param {function} stateHandler
 * @param {string} targetState
 * @param {string} currentState
@@ -293,6 +298,7 @@ function _useArrayHandler(stateHandler, targetState, currentState) {
 }
 
 /**
+* @param {function} reportError
 * @param {object} stateHandler
 * @param {string} targetState
 * @param {string} currentState

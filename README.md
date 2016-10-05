@@ -52,6 +52,11 @@ available. The method is variadic, all additional arguments will be
 passed to the state handler
 
 
+### trigger(action {String}, ...args)
+
+evaluate the transition specified within the registered action
+
+
 ### onEnter|Exit(state {String}, callback {Function})
 
 notify the callback when the machine enters/exits the specified state

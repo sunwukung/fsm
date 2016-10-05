@@ -1,5 +1,5 @@
 {
-  "name": "swk-fsm",
+  "name": "@swk/fsm",
   "version": "1.0.0",
   "description": "finite state machine library",
   "main": "./dist/fsm.js",
