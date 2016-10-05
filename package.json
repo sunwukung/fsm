@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:sunwukung/swk-fsm.git"
+    "url": "git@github.com:sunwukung/fsm.git"
   },
   "keywords": [
     "fsm",
@@ -22,7 +22,7 @@
     "finite-state-machine"
   ],
   "author": "Marcus Kielly",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "babel-cli": "^6.8.0",
     "babel-core": "^6.8.0",
