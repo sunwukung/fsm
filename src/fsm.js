@@ -54,7 +54,7 @@ export default function(stateGraph, options = {}) {
   const spec = clone(stateGraph);
   validateConstruction(reportError, spec);
   const states = spec.states;
-  const actions = spec.actions;
+  const actions = spec.actions || {};
   const stateKeys = Object.keys(states);
   const subscriptions = _compileSubscriptionKeys(states);
   let currentState = spec.initial;
@@ -75,6 +75,7 @@ export default function(stateGraph, options = {}) {
       }
       nextState = handleTransition(targetState, startState, stateHandler, states, args);
       if (startState !== nextState) {
+        currentState = nextState;
         subscriptions.exit[startState].forEach((subscriber) => {
           subscriber(startState, nextState, args);
         });
@@ -84,7 +85,6 @@ export default function(stateGraph, options = {}) {
         subscriptions.change.forEach((subscriber) => {
           subscriber(startState, nextState, args);
         });
-        currentState = nextState;
         if (isTerminated(currentState, states[currentState])) {
           subscriptions.terminate.forEach((subscriber) => {
             subscriber(startState, currentState, args);
@@ -195,6 +195,12 @@ export default function(stateGraph, options = {}) {
       }
       const transitionSpec = actions[action];
       let selectedTransition = undefined;
+      if (!transitionSpec) {
+        subscriptions.fail.forEach((subscriber) => {
+          subscriber(action, args)
+        })
+        return false;
+      }
       transitionSpec.forEach((transition) => {
         if (isArray(transition.from)) {
           transition.from.forEach((from) => {
