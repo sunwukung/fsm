@@ -197,7 +197,7 @@ export default function(stateGraph, options = {}) {
       let selectedTransition = undefined;
       if (!transitionSpec) {
         subscriptions.fail.forEach((subscriber) => {
-          subscriber(action, args)
+          subscriber(currentState, args)
         })
         return false;
       }

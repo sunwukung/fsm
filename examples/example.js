@@ -1,3 +1,4 @@
+require("purecss/build/pure-min.css");
 import fsmFactory from "../src/fsm";
 import stateConfig from "./state-config.js";
 
@@ -15,7 +16,6 @@ machine.onChange(() => {
 });
 
 machine.onFail((state, args) => {
-  console.log(state, args)
   stateDisplay.innerHTML = "ERROR";
 });
 
