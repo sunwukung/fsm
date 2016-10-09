@@ -14,7 +14,8 @@ machine.onChange(() => {
   stateDisplay.innerHTML = machine.getState();
 });
 
-machine.onFail(() => {
+machine.onFail((state, args) => {
+  console.log(state, args)
   stateDisplay.innerHTML = "ERROR";
 });
 
@@ -23,7 +24,7 @@ nextButton.addEventListener("click", () => {
 });
 
 fooButton.addEventListener("click", () => {
-  machine.transition("foo");
+  machine.transition("foo", 1);
 });
 
 barButton.addEventListener("click", () => {

@@ -68,3 +68,11 @@ the machine cannot exit a terminal state.
 
 
 
+## EXAMPLES
+
+You can see some examples by looking in the examples folder.
+You can serve these examples by running
+
+    npm run serve:examples
+
+which will then serve the examples [here](http://localhost:8778/examples)

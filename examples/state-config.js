@@ -10,14 +10,14 @@ export default {
      an array indicates that there are multiple exit states, and they
      can always be transitioned to
      */
-    bar: ["foo", "bar"],
+    bar: ["foo", "baz"],
     /*
      an object indicates that there are potentially many exit
      states. some of them may require some precondition to be
      satisfied before the transition is allowed
      */
     baz: {
-      foo: (a) => { return a === 1; }, // must satisfy the predicate
+      foo: (a) => a === 1, // must satisfy the predicate
       bar: true // can always be transitioned to
     },
   },
