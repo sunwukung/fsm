@@ -1,5 +1,0 @@
---ui bdd
---require resources/babel-register.js
---recursive
---timeout 4000
---colors

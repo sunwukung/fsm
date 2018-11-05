@@ -1,137 +1,140 @@
-import {expect} from "chai";
-import fsm from "../src/fsm";
-import sinon from "sinon";
+const test = require("tape");
+const sinon = require("sinon");
+const { FSM, factory } = require("../src/fsm.js");
 
-const simpleStateGraph = {
-  initial: "foo",
+const stateGraph = {
   states: {
     foo: "bar",
-    bar: "baz",
-    baz: "foo"
-  }
-};
-
-const complexStateGraph = {
-  initial: "foo",
-  states: {
-    foo: "baz",
     bar: ["foo", "baz"],
-    baz: {
-      foo: (predicateResult) => {
-        return predicateResult;
-      },
-      bar: () => {
-        return "not a string";
-      },
-      bang: true
-    },
-    bang: "foo",
+    baz: "foo"
   },
-};
-
-const options = {
-  errorReporter: (msg) => {
-    throw new Error(msg);
+  actions: {
+    cycle: [
+      { from: "foo", to: "bar" },
+      { from: "bar", to: "baz" },
+      { from: "baz", to: "foo" }
+    ],
+    dynamic: [
+      { from: "foo", to: "bar" },
+      {
+        from: "bar",
+        to: ctx => {
+          console.log("calling", ctx);
+          return ctx === 1 ? "foo" : "baz";
+        }
+      },
+      { from: "baz", to: "foo" }
+    ]
   }
 };
 
-describe("methods", () => {
-
-  let machine = {};
-
-  describe("transition", () => {
-
-    beforeEach(() => {
-      machine = fsm(simpleStateGraph, options);
-    });
-
-
-    it("is a function", () => {
-      expect(machine.transition).to.be.a("function");
-    });
-
-    it("will throw if the state key is not a string", () => {
-      [false, undefined, null, 123, [], {}, () => {}].forEach((badArg) => {
-        expect(() => {
-          machine.transition(badArg);
-        }).to.throw("state key must be a string");
-      });
-    });
-
-    it("will throw if the state key is not in the state graph", () => {
-      expect(() => {
-        machine.transition("unknown");
-      }).to.throw("state key could not be found in the state graph");
-    });
-
-    it("leaves the machine in it's original state", () => {
-      machine.transition("baz");
-      expect(machine.getState()).to.equal("foo");
-    });
-
-  });
-
-  describe("simple state handlers", () =>  {
-
-    beforeEach(() => {
-      machine = fsm(complexStateGraph, options);
-    });
-
-    it("strings", () => {
-      machine.transition("baz");
-      expect(machine.getState()).to.equal("baz");
-    });
-
-    it("arrays", () => {
-      machine.transition("bar");
-      machine.transition("foo");
-      expect(machine.getState()).to.equal("foo");
-    });
-  });
-
-  describe("object state handlers can contain two property types", () =>  {
-    let spy;
-
-    beforeEach(() => {
-      spy = sinon.spy(complexStateGraph.states.baz, "foo");
-      machine = fsm(complexStateGraph, options);
-    });
-
-    afterEach(() => {
-      spy.restore();
-    });
-
-    it("boolean", () =>  {
-      machine.transition("baz");
-      machine.transition("bang");
-      expect(machine.getState()).to.equal("bang");
-    });
-
-    describe("functions (predicates)", () =>  {
-
-      it("passes arguments to the predicate", () => {
-        machine.transition("baz");
-        machine.transition("foo", true, "additional arguments", 123);
-        expect(spy.calledWith(true, "additional arguments", 123)).to.equal(true);
-        expect(machine.getState()).to.equal("foo");
-      });
-
-      it("performs transition based on boolean result of predicate", () =>  {
-        machine.transition("baz");
-        machine.transition("foo", false);
-        expect(machine.getState()).to.equal("baz");
-      });
-
-      it("throws if the result is not a boolean", () =>  {
-        machine.transition("baz");
-        expect(() => {
-          machine.transition("bar");
-        }).to.throw("predicate state handler did not return a boolean");
-      });
-
-    });
-
-  });
-
+test("fsm factory returns an instance of FSM", t => {
+  const machine = factory({});
+  t.ok(machine instanceof FSM);
+  t.end();
 });
 
+test("fsm.getState returns the current state", t => {
+  const machine = factory({}, "foo");
+  t.equal(machine.getState(), "foo");
+  t.end();
+});
+
+test("fsm.transition will transition from one state to the next", t => {
+  const machine = factory(stateGraph, "foo");
+  machine.transition("bar");
+  t.equal(machine.getState(), "bar");
+  machine.transition("baz");
+  t.equal(machine.getState(), "baz");
+  machine.transition("foo");
+  t.equal(machine.getState(), "foo");
+  t.end();
+});
+
+test("fsm.transition will not complete if the target state is not available", t => {
+  const machine = factory(stateGraph, "foo");
+  machine.transition("cobblers");
+  t.equal(machine.getState(), "foo");
+  t.end();
+});
+
+test("can subscribe to change events", t => {
+  const machine = factory(stateGraph, "foo");
+  const spy = sinon.spy();
+  machine.onChange(spy);
+  machine.transition("bar");
+  t.ok(spy.calledOnce);
+  t.end();
+});
+
+test("change subscribers are given previous and current state", t => {
+  const machine = factory(stateGraph, "foo");
+  const spy = sinon.spy();
+  machine.onChange(spy);
+  machine.transition("bar");
+  t.ok(spy.calledWith({ previous: "foo", current: "bar" }));
+  t.end();
+});
+
+test("can subscribe to error events", t => {
+  const machine = factory(stateGraph, "foo");
+  const spy = sinon.spy();
+  machine.onError(spy);
+  machine.transition("quack");
+  t.ok(spy.calledOnce);
+  t.end();
+});
+
+test("error subscribers are given current and target state", t => {
+  const machine = factory(stateGraph, "foo");
+  const spy = sinon.spy();
+  machine.onError(spy);
+  machine.transition("quack");
+  t.ok(spy.calledWith({ current: "foo", target: "quack" }));
+  t.end();
+});
+
+test("removeChangeSubscription removes change handlers", t => {
+  const machine = factory(stateGraph, "foo");
+  const spy = sinon.spy();
+  machine.onChange(spy);
+  machine.transition("bar");
+  t.ok(spy.calledOnce);
+  machine.removeChangeSubscription(spy);
+  machine.transition("baz");
+  t.ok(spy.calledOnce);
+  t.end();
+});
+
+test("removeErrorSubscription removes error handlers", t => {
+  const machine = factory(stateGraph, "foo");
+  const spy = sinon.spy();
+  machine.onError(spy);
+  machine.transition("quack");
+  t.ok(spy.calledOnce);
+  machine.removeErrorSubscription(spy);
+  machine.transition("quack");
+  t.ok(spy.calledOnce);
+  t.end();
+});
+
+test("machine can transition through linear states", t => {
+  const machine = factory(stateGraph, "foo");
+  machine.action("cycle");
+  t.equal(machine.getState(), "bar");
+  machine.action("cycle");
+  t.equal(machine.getState(), "baz");
+  machine.action("cycle");
+  t.equal(machine.getState(), "foo");
+  t.end();
+});
+
+test("machine can transition through dynamic states", t => {
+  const machine = factory(stateGraph, "bar");
+  machine.action("dynamic", 1);
+  t.equal(machine.getState(), "foo");
+  machine.action("cycle");
+  machine.action("dynamic", 0);
+  t.equal(machine.getState(), "baz");
+  t.end();
+});
