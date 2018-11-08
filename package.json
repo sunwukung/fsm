@@ -1,6 +1,6 @@
 {
   "name": "@sunwukung/fsm",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "finite state machine library",
   "main": "./src/fsm.js",
   "scripts": {

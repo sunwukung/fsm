@@ -1,19 +1,8 @@
-const { find, compose, contains, prop, is, forEach, filter } = require("ramda");
-
-const isArray = is(Array);
-const isFunction = is(Function);
-
-const locateSubAction = (action, currentState) =>
-  find(
-    compose(
-      contains(currentState),
-      prop("from")
-    )
-  )(action);
-
+const { contains, forEach } = require("ramda");
+const { notify, processAction, removeSubscription } = require('./utils')
 class FSM {
   constructor({ states, actions }, initialState) {
-    this.subscriptions = {
+    this._subscriptions = {
       change: [],
       error: []
     };
@@ -24,19 +13,14 @@ class FSM {
     this.transition = this.transition.bind(this);
     this.onChange = this.onChange.bind(this);
     this.onError = this.onError.bind(this);
-    this.notify = this.notify.bind(this);
     this.action = this.action.bind(this);
-    this.processAction = this.processAction.bind(this);
-    this.processSubAction = this.processSubAction.bind(this);
-    this.removeSubscription = this.removeSubscription.bind(this);
     this.removeChangeSubscription = this.removeChangeSubscription.bind(this);
     this.removeErrorSubscription = this.removeErrorSubscription.bind(this);
   }
 
   action(id, ctx) {
-    console.log("calling action");
     return this.actions[id]
-      ? this.processAction(this.actions[id], ctx)
+      ? processAction(this.actions[id], ctx, this)
       : this.currentState;
   }
 
@@ -44,52 +28,20 @@ class FSM {
     return this.currentState;
   }
 
-  notify(type, stateA, stateB) {
-    forEach(handler => {
-      handler(stateA, stateB);
-    }, this.subscriptions[type]);
-  }
-
   onChange(handler) {
-    this.subscriptions.change.push(handler);
+    this._subscriptions.change.push(handler);
   }
 
   onError(handler) {
-    this.subscriptions.error.push(handler);
-  }
-
-  processAction(action, ctx) {
-    if (isArray(action)) {
-      const subAction = locateSubAction(action, this.currentState);
-      if (subAction) {
-        this.processSubAction(subAction, ctx);
-      } else {
-        this.notify("error", { current: this.currentState });
-      }
-    }
-  }
-
-  processSubAction(subAction, ctx) {
-    if (isFunction(subAction.to)) {
-      const targetState = subAction.to(ctx, this.currentState);
-      return this.transition(targetState);
-    }
-    return this.transition(subAction.to);
-  }
-
-  removeSubscription(type, subscription) {
-    this.subscriptions[type] = filter(
-      item => item !== subscription,
-      this.subscriptions[type]
-    );
+    this._subscriptions.error.push(handler);
   }
 
   removeChangeSubscription(subscription) {
-    this.removeSubscription("change", subscription);
+    this.subscrtipions = removeSubscription("change", subscription, this._subscriptions);
   }
 
   removeErrorSubscription(subscription) {
-    this.removeSubscription("error", subscription);
+    this._subscriptions = removeSubscription("error", subscription, this._subscriptions);
   }
 
   transition(targetState) {
@@ -97,12 +49,16 @@ class FSM {
     if (contains(targetState, stateNode)) {
       const previousState = this.currentState;
       this.currentState = targetState;
-      return this.notify("change", {
-        previous: previousState,
-        current: this.currentState
-      });
+      return notify("change",
+        { previous: previousState, current: this.currentState },
+        this._subscriptions
+      );
     }
-    this.notify("error", { current: this.currentState, target: targetState });
+    notify(
+      "error",
+      { current: this.currentState, target: targetState },
+      this._subscriptions
+    );
   }
 }
 
